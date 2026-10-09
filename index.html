@@ -43,6 +43,34 @@
   .track-btn.on { background: #c62828; }
   .track-info { font-size: 12px; color: #455; }
 
+  /* ===== الكاميرا داخل الصفحة ===== */
+  #camModal { display: none; position: fixed; inset: 0; z-index: 5000; background: #000; color: #fff; flex-direction: column; }
+  #camModal.open { display: flex; }
+  .cam-top { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; gap: 10px; }
+  .cam-top span { font-weight: bold; font-size: 15px; }
+  .cam-ic { background: rgba(255,255,255,.15); color: #fff; width: 44px; height: 44px; padding: 0; border-radius: 50%; font-size: 18px; }
+  .cam-list { display: flex; gap: 6px; overflow-x: auto; padding: 0 12px 8px; scrollbar-width: none; }
+  .cam-list::-webkit-scrollbar { display: none; }
+  .cam-list button { flex: 0 0 auto; background: rgba(255,255,255,.14); color: #fff; padding: 8px 12px; font-size: 13px; border-radius: 20px; white-space: nowrap; }
+  .cam-list button.on { background: #ffd54f; color: #000; }
+  .cam-view { flex: 1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  #camVideo, #camShot { width: 100%; height: 100%; object-fit: contain; background: #000; }
+  #camShot { display: none; position: absolute; inset: 0; }
+  #camModal.review #camShot { display: block; }
+  #camModal.review #camVideo { visibility: hidden; }
+  #camMsg { position: absolute; inset: auto 16px 16px; text-align: center; font-size: 14px; background: rgba(0,0,0,.6); border-radius: 10px; padding: 8px; display: none; }
+  #camMsg.show { display: block; }
+  .cam-bar { display: flex; align-items: center; justify-content: space-around; padding: 16px 12px 26px; gap: 12px; }
+  #camReview { display: none; }
+  #camModal.review #camReview { display: flex; }
+  #camModal.review #camLive { display: none; }
+  #camShutter { width: 74px; height: 74px; border-radius: 50%; background: #fff; border: 6px solid rgba(255,255,255,.4); background-clip: padding-box; padding: 0; }
+  #camShutter:active { transform: scale(.93); }
+  .cam-side { width: 64px; background: transparent; color: #fff; font-size: 12px; padding: 4px; line-height: 1.5; }
+  .cam-act { flex: 1; padding: 14px; font-size: 16px; }
+  .cam-act.retake { background: #424242; color: #fff; }
+  .cam-act.use { background: #2e7d32; color: #fff; }
+
   /* شريط التحديد على الخريطة */
   #pickBar { display: none; margin: 0 16px 8px; background: #fff3e0; border: 2px solid #ef6c00; color: #8a3b00;
     border-radius: 10px; padding: 10px 12px; font-weight: bold; font-size: 14px; align-items: center; gap: 10px; justify-content: space-between; }
@@ -136,6 +164,31 @@
 </div>
 
 <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="galleryInput" accept="image/*" multiple style="display:none">
+
+<!-- الكاميرا داخل الصفحة -->
+<div id="camModal">
+  <div class="cam-top">
+    <button id="camClose" class="cam-ic" aria-label="إغلاق">✖</button>
+    <span id="camTitle">التقاط صورة</span>
+    <button id="camSwitch" class="cam-ic" aria-label="الكاميرا التالية">🔄</button>
+  </div>
+  <div id="camList" class="cam-list"></div>
+  <div class="cam-view">
+    <video id="camVideo" autoplay playsinline muted></video>
+    <img id="camShot" alt="">
+    <div id="camMsg"></div>
+  </div>
+  <div class="cam-bar" id="camLive">
+    <button id="camGallery" class="cam-side">🖼️<br>المعرض</button>
+    <button id="camShutter" aria-label="التقاط"></button>
+    <button id="camApps" class="cam-side">📲<br>تطبيق كاميرا</button>
+  </div>
+  <div class="cam-bar" id="camReview">
+    <button id="camRetake" class="cam-act retake">↺ إعادة</button>
+    <button id="camUse" class="cam-act use">✔ استخدام الصورة</button>
+  </div>
+</div>
 
 <div id="status">اضغط "التقاط صورة" عند كل نقطة — النقاط تُحفظ تلقائياً.</div>
 
@@ -380,36 +433,263 @@
   });
 
   // ===== الالتقاط =====
-  document.getElementById('captureBtn').onclick = () => { stopPick(); cameraInput.click(); };
+  document.getElementById('captureBtn').onclick = () => { stopPick(); openCamera(); };
 
-  cameraInput.onchange = async (e) => {
-    const file = e.target.files[0];
-    cameraInput.value = '';
-    if (!file) return;
+  // تحديد الموقع ثم إضافة النقطة (مشترك بين الكاميرا والمعرض)
+  function locateAndAdd(imgData) {
     statusEl.textContent = 'جاري تحديد الموقع...';
-    const imgData = await resizeImage(file, 800);
     if (!navigator.geolocation) { statusEl.textContent = 'المتصفح لا يدعم تحديد الموقع.'; return; }
     navigator.geolocation.getCurrentPosition(
       pos => addPoint(imgData, pos.coords),
       err => { statusEl.textContent = 'تعذّر تحديد الموقع: فعّل الموقع واسمح للمتصفح بالوصول. (' + err.message + ')'; },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
+  }
+  // ===== قراءة الموقع والوقت من داخل الصورة (EXIF) =====
+  function readExif(buf) {
+    try {
+      const v = new DataView(buf);
+      if (v.byteLength < 4 || v.getUint16(0) !== 0xFFD8) return null;   // JPEG فقط
+      let off = 2;
+      while (off + 4 < v.byteLength) {
+        const m = v.getUint16(off);
+        if ((m & 0xFF00) !== 0xFF00) break;
+        const len = v.getUint16(off + 2);
+        if (m === 0xFFE1 && v.getUint32(off + 4) === 0x45786966) return parseTiff(v, off + 10);
+        if (m === 0xFFDA) break;
+        off += 2 + len;
+      }
+    } catch (e) {}
+    return null;
+  }
+  function parseTiff(v, t) {
+    const le = v.getUint16(t) === 0x4949;
+    const u16 = o => v.getUint16(o, le), u32 = o => v.getUint32(o, le);
+    const SIZE = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1, 9: 4, 10: 8 };
+    const ifd = o => {
+      const n = u16(o), tags = {};
+      for (let i = 0; i < n; i++) { const e = o + 2 + i * 12; tags[u16(e)] = { type: u16(e + 2), count: u32(e + 4), at: e + 8 }; }
+      return tags;
+    };
+    const ptr = tg => (SIZE[tg.type] || 1) * tg.count <= 4 ? tg.at : t + u32(tg.at);
+    const rat = o => { const d = u32(o + 4); return d ? u32(o) / d : 0; };
+    const str = tg => { const p = ptr(tg); let s = ''; for (let i = 0; i < tg.count; i++) { const c = v.getUint8(p + i); if (!c) break; s += String.fromCharCode(c); } return s; };
+    const out = {};
+    const ifd0 = ifd(t + u32(t + 4));
+    if (ifd0[0x8825]) {
+      const g = ifd(t + u32(ifd0[0x8825].at));
+      if (g[2] && g[4]) {
+        const dms = tg => { const p = ptr(tg); return rat(p) + rat(p + 8) / 60 + rat(p + 16) / 3600; };
+        let lat = dms(g[2]), lng = dms(g[4]);
+        if (g[1] && str(g[1]).toUpperCase() === 'S') lat = -lat;
+        if (g[3] && str(g[3]).toUpperCase() === 'W') lng = -lng;
+        if ((lat || lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) { out.lat = lat; out.lng = lng; }
+        if (g[0x1F]) out.acc = rat(ptr(g[0x1F]));
+      }
+    }
+    const toDate = s => { const m = (s || '').match(/(\d{4}):(\d\d):(\d\d) (\d\d):(\d\d):(\d\d)/); return m ? new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6]) : null; };
+    if (ifd0[0x8769]) {
+      const ex = ifd(t + u32(ifd0[0x8769].at));
+      const tg = ex[0x9003] || ex[0x9004];
+      if (tg) out.date = toDate(str(tg));
+    }
+    if (!out.date && ifd0[0x0132]) out.date = toDate(str(ifd0[0x0132]));
+    return out;
+  }
+  function getHere() {
+    return new Promise((res, rej) => {
+      if (!navigator.geolocation) return rej(new Error('no geolocation'));
+      navigator.geolocation.getCurrentPosition(p => res(p.coords), rej, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+    });
+  }
+
+  // صورة أو عدة صور من المعرض / تطبيق كاميرا
+  async function fromFileInput(e) {
+    const input = e.target, files = [...input.files];
+    input.value = '';
+    if (!files.length) return;
+    closeCamera();
+    statusEl.textContent = files.length > 1 ? `جاري قراءة ${files.length} صور...` : 'جاري قراءة الصورة...';
+
+    const items = [];
+    for (const f of files) {
+      let ex = null;
+      try { ex = readExif(await f.arrayBuffer()); } catch (_) {}
+      items.push({ f, ex, t: ex && ex.date ? ex.date.getTime() : f.lastModified });
+    }
+    items.sort((a, b) => a.t - b.t);   // ترتيب حسب وقت التصوير
+
+    const hasGps = it => it.ex && it.ex.lat !== undefined;
+    let here = null;
+    if (items.some(it => !hasGps(it))) {
+      statusEl.textContent = 'بعض الصور بلا موقع — جاري أخذ موقعك الحالي...';
+      try { here = await getHere(); } catch (_) {}
+    }
+
+    const batch = items.length > 1;
+    let fromPhoto = 0, fromHere = 0, failed = 0;
+    for (const it of items) {
+      const img = await resizeImage(it.f, 800);
+      const time = it.ex && it.ex.date ? it.ex.date.toLocaleString('ar-SA') : null;
+      if (hasGps(it)) {
+        await addPoint(img, { latitude: it.ex.lat, longitude: it.ex.lng, accuracy: it.ex.acc }, { time, src: 'exif', noPick: batch });
+        fromPhoto++;
+      } else if (here) {
+        await addPoint(img, here, { time, src: 'gps', noPick: batch });
+        fromHere++;
+      } else failed++;
+    }
+
+    const parts = [];
+    if (fromPhoto) parts.push(`${fromPhoto} من موقع التصوير داخل الصورة 📷`);
+    if (fromHere) parts.push(`${fromHere} من موقعك الحالي (الصورة بلا موقع)`);
+    if (failed) parts.push(`${failed} لم تُضف لتعذّر تحديد الموقع`);
+    statusEl.textContent = (batch ? `تمت إضافة الصور: ` : 'تمت الإضافة: ') + parts.join(' — ') +
+      (batch && autoPick.checked ? ' — حدّد الإحداثيات الثانية من الجدول.' : '');
+  }
+  cameraInput.onchange = fromFileInput;
+  document.getElementById('galleryInput').onchange = fromFileInput;
+
+  // ===== الكاميرا داخل الصفحة مع اختيار أي كاميرا في الجوال =====
+  const camModal = document.getElementById('camModal');
+  const camVideo = document.getElementById('camVideo');
+  const camShot = document.getElementById('camShot');
+  const camMsg = document.getElementById('camMsg');
+  const camList = document.getElementById('camList');
+  let camStream = null, cams = [], camId = getSetting('pm_cam', ''), shotData = null;
+
+  function camLabel(d, i) {
+    const l = (d.label || '').toLowerCase();
+    const front = /front|user|facing front|أمام/.test(l);
+    let name = front ? 'أمامية' : 'خلفية';
+    if (/ultra|wide angle|0\.5|واسع/.test(l)) name += ' واسعة جداً';
+    else if (/tele|zoom|تقريب/.test(l)) name += ' تقريب';
+    else if (/wide/.test(l) && !front) name += ' عادية';
+    if (/dual|triple/.test(l)) name += /triple/.test(l) ? ' ثلاثية' : ' مزدوجة';
+    const num = (d.label.match(/camera2?\s*(\d+)/i) || [])[1];
+    return `📷 ${name}${num !== undefined ? ' (' + num + ')' : ''}` || `كاميرا ${i + 1}`;
+  }
+
+  async function listCams() {
+    try {
+      const all = await navigator.mediaDevices.enumerateDevices();
+      cams = all.filter(d => d.kind === 'videoinput');
+    } catch (e) { cams = []; }
+    camList.innerHTML = '';
+    // ترقيم الأسماء المكررة
+    const seen = {};
+    cams.forEach((d, i) => {
+      let label = camLabel(d, i);
+      seen[label] = (seen[label] || 0) + 1;
+      if (seen[label] > 1) label += ' ' + seen[label];
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.title = d.label || '';
+      b.classList.toggle('on', d.deviceId === camId);
+      b.onclick = () => startStream(d.deviceId);
+      camList.appendChild(b);
+    });
+    camList.style.display = cams.length > 1 ? 'flex' : 'none';
+    document.getElementById('camSwitch').style.visibility = cams.length > 1 ? 'visible' : 'hidden';
+  }
+
+  function stopStream() {
+    if (camStream) camStream.getTracks().forEach(t => t.stop());
+    camStream = null;
+  }
+
+  async function startStream(deviceId) {
+    stopStream();
+    camMsg.classList.remove('show');
+    const base = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+    const tries = deviceId
+      ? [{ video: { ...base, deviceId: { exact: deviceId } } }, { video: { ...base, facingMode: { ideal: 'environment' } } }]
+      : [{ video: { ...base, facingMode: { ideal: 'environment' } } }, { video: true }];
+    for (const c of tries) {
+      try { camStream = await navigator.mediaDevices.getUserMedia({ ...c, audio: false }); break; } catch (e) { camStream = null; }
+    }
+    if (!camStream) {
+      camMsg.textContent = 'تعذّر تشغيل الكاميرا. اسمح للمتصفح باستخدام الكاميرا، أو اختر صورة من المعرض.';
+      camMsg.classList.add('show');
+      return false;
+    }
+    camVideo.srcObject = camStream;
+    try { await camVideo.play(); } catch (e) {}
+    const s = camStream.getVideoTracks()[0].getSettings();
+    camId = s.deviceId || deviceId || '';
+    setSetting('pm_cam', camId);
+    await listCams();   // أسماء الكاميرات تظهر بعد السماح بالكاميرا
+    return true;
+  }
+
+  async function openCamera() {
+    // متصفح قديم لا يدعم الكاميرا داخل الصفحة: نرجع لكاميرا الجوال العادية
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { cameraInput.click(); return; }
+    shotData = null;
+    camModal.classList.remove('review');
+    camModal.classList.add('open');
+    document.getElementById('camTitle').textContent = `التقاط النقطة ${letter(points.length)}`;
+    await startStream(camId);
+  }
+
+  function closeCamera() {
+    stopStream();
+    camModal.classList.remove('open', 'review');
+    camVideo.srcObject = null;
+  }
+
+  document.getElementById('camClose').onclick = closeCamera;
+  document.getElementById('camGallery').onclick = () => document.getElementById('galleryInput').click();
+  // فتح تطبيقات الكاميرا المثبتة في الجوال (يظهر للمستخدم قائمة يختار منها)
+  document.getElementById('camApps').onclick = () => {
+    closeCamera();            // نحرر الكاميرا حتى يستطيع التطبيق الآخر استخدامها
+    statusEl.textContent = 'اختر تطبيق الكاميرا، والتقط الصورة، ثم ارجع للصفحة.';
+    cameraInput.click();
+  };
+  document.getElementById('camSwitch').onclick = () => {
+    if (cams.length < 2) return;
+    const i = cams.findIndex(d => d.deviceId === camId);
+    startStream(cams[(i + 1) % cams.length].deviceId);
   };
 
-  async function addPoint(imgData, c) {
+  document.getElementById('camShutter').onclick = () => {
+    if (!camStream || !camVideo.videoWidth) return;
+    const w = camVideo.videoWidth, h = camVideo.videoHeight;
+    const k = Math.min(1, 800 / Math.max(w, h));
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+    cv.getContext('2d').drawImage(camVideo, 0, 0, cv.width, cv.height);
+    shotData = cv.toDataURL('image/jpeg', 0.75);
+    camShot.src = shotData;
+    camModal.classList.add('review');
+    if (navigator.vibrate) navigator.vibrate(40);
+  };
+  document.getElementById('camRetake').onclick = () => { shotData = null; camModal.classList.remove('review'); };
+  document.getElementById('camUse').onclick = () => {
+    if (!shotData) return;
+    const data = shotData;
+    closeCamera();
+    locateAndAdd(data);
+  };
+
+  async function addPoint(imgData, c, opt = {}) {
     const p = {
       name: letter(points.length), img: imgData,
       lat: +c.latitude.toFixed(6), lng: +c.longitude.toFixed(6),
-      acc: Math.round(c.accuracy), time: new Date().toLocaleString('ar-SA'), pick: null
+      acc: c.accuracy != null && isFinite(c.accuracy) ? Math.round(c.accuracy) : null,
+      time: opt.time || new Date().toLocaleString('ar-SA'), pick: null,
+      src: opt.src || 'gps'
     };
     points.push(p);
     if (points.length === 1) map.setView([p.lat, p.lng], 18);
     redraw(true);
     await persist();
-    statusEl.textContent = `تم حفظ النقطة ${p.name} ✔ (دقة ±${p.acc} م)` +
+    statusEl.textContent = `تم حفظ النقطة ${p.name} ✔ ` +
+      (p.src === 'exif' ? '(الموقع من داخل الصورة)' : `(دقة ±${p.acc} م)`) +
       (watchId === null ? ' — تنبيه: تتبع المشي متوقف، فلن تُحسب المسافة الممشاة.' : '');
-    if (autoPick.checked) startPick(points.length - 1);
+    if (autoPick.checked && !opt.noPick) startPick(points.length - 1);
   }
+  const accText = p => p.acc != null ? p.acc : (p.src === 'exif' ? 'من الصورة' : '—');
 
   // ===== تحديد الإحداثية الثانية على الخريطة =====
   function startPick(i) {
@@ -507,7 +787,7 @@
       tr.innerHTML = `
         <td><b>${p.name}</b></td>
         <td><img src="${p.img}"></td>
-        <td><span class="ll">${ll(p)}</span></td>
+        <td><span class="ll">${ll(p)}</span>${p.src === 'exif' ? '<br><small style="color:#2e7d32">📷 من الصورة</small>' : ''}</td>
         <td>${p.pick ? `<span class="ll pk">${ll(p.pick)}</span><br>` : ''}</td>
         <td>${d !== null ? `<span class="dist">${fmtLen(d)}</span>` : '—'}</td>
         <td><small>${p.time}</small></td>`;
@@ -703,7 +983,7 @@
 
       const row = p => {
         const d = p.pick ? fmtLen(distM(p, p.pick)) : '—';
-        return `<tr><td><b>${p.name}</b></td><td dir="ltr">${ll(p)}</td><td dir="ltr" style="color:#e65100">${p.pick ? ll(p.pick) : '—'}</td><td><b>${d}</b></td><td>${p.acc}</td><td>${p.time}</td></tr>`;
+        return `<tr><td><b>${p.name}</b></td><td dir="ltr">${ll(p)}</td><td dir="ltr" style="color:#e65100">${p.pick ? ll(p.pick) : '—'}</td><td><b>${d}</b></td><td>${accText(p)}</td><td>${p.time}</td></tr>`;
       };
       const head = `<thead><tr><th>النقطة</th><th>إحداثيات الصورة</th><th>الإحداثية المحددة</th><th>المسافة</th><th>الدقة (م)</th><th>الوقت</th></tr></thead>`;
 

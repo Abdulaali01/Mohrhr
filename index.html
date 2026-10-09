@@ -11,30 +11,57 @@
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; font-family: Tahoma, Arial, sans-serif; background: #f2f4f7; color: #1d2433; }
-  header { background: #1f4e79; color: #fff; padding: 12px 16px; font-size: 18px; font-weight: bold; }
+  header { background: #1f4e79; color: #fff; padding: 12px 16px; font-size: 18px; font-weight: bold;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
   .bar { display: flex; gap: 8px; padding: 10px 16px; flex-wrap: wrap; }
-  button { border: 0; border-radius: 10px; padding: 12px 14px; font-size: 15px; font-weight: bold; cursor: pointer; }
-  #captureBtn { background: #2e7d32; color: #fff; flex: 2; }
-  #pdfBtn { background: #c62828; color: #fff; flex: 1; }
+  button { border: 0; border-radius: 10px; padding: 12px 14px; font-size: 15px; font-weight: bold; cursor: pointer; font-family: inherit; }
+  #captureBtn { background: #2e7d32; color: #fff; flex: 2; min-width: 170px; }
+  #pdfBtn { background: #c62828; color: #fff; flex: 1; min-width: 120px; }
   #undoBtn, #clearBtn { background: #e0e0e0; color: #333; }
   button:disabled { opacity: .5; cursor: not-allowed; }
-  #map { height: 60vh; margin: 0 16px; border-radius: 12px; border: 1px solid #ccd; }
-  #status { padding: 6px 16px; font-size: 13px; color: #555; min-height: 22px; }
-  #info { padding: 4px 16px; font-size: 14px; font-weight: bold; color: #1f4e79; }
-  table { width: calc(100% - 32px); margin: 10px 16px 30px; border-collapse: collapse; background: #fff; font-size: 13px; }
+
+  /* أزرار الاختيار */
+  .options { display: flex; gap: 14px; padding: 0 16px 6px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+  .seg { display: inline-flex; background: #e3e7ee; border-radius: 10px; padding: 3px; }
+  .seg button { background: transparent; color: #444; padding: 7px 12px; font-size: 13px; border-radius: 8px; }
+  .seg button.on { background: #fff; color: #1f4e79; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  header .seg { background: rgba(255,255,255,.18); }
+  header .seg button { color: #fff; }
+  header .seg button.on { background: #fff; color: #1f4e79; }
+
+  #status { padding: 4px 16px; font-size: 13px; color: #555; min-height: 22px; }
+  #info { padding: 2px 16px 6px; font-size: 14px; font-weight: bold; color: #1f4e79; }
+
+  #map { border-radius: 12px; border: 1px solid #ccd; }
+  table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
   th, td { border: 1px solid #ccd; padding: 6px; text-align: center; }
-  th { background: #1f4e79; color: #fff; }
+  th { background: #1f4e79; color: #fff; position: sticky; top: 0; z-index: 1; }
   td img { width: 60px; height: 45px; object-fit: cover; border-radius: 4px; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: #eef3fa; }
+
+  /* عرض الجوال: الخريطة فوق والجدول تحت */
+  body.mobile .layout { padding: 0 16px 30px; }
+  body.mobile #map { height: 60vh; }
+  body.mobile .side { margin-top: 10px; }
+
+  /* عرض الويب: الخريطة يمين والجدول بجانبها */
+  body.web .layout { display: grid; grid-template-columns: 1fr 460px; gap: 14px; padding: 0 16px 16px; height: calc(100vh - 175px); min-height: 450px; }
+  body.web #map { height: 100%; }
+  body.web .side { overflow: auto; border: 1px solid #ccd; border-radius: 12px; background: #fff; }
+  body.web .bar { max-width: 900px; }
+
   .letter-icon { background: #fff; color: #000; border: 3px solid #000; border-radius: 50%;
-    width: 34px; height: 34px; line-height: 28px; text-align: center; font-weight: bold; font-size: 18px;
+    width: 34px; height: 34px; line-height: 28px; text-align: center; font-weight: bold; font-size: 15px;
     box-shadow: 0 1px 5px rgba(0,0,0,.5); font-family: Arial; }
   .popup-box { text-align: center; direction: rtl; font-family: Tahoma, Arial; }
   .popup-box img { width: 180px; height: 135px; object-fit: cover; border-radius: 6px; display: block; margin-bottom: 6px; }
+
   #report { position: absolute; left: -9999px; top: 0; width: 794px; background: #fff; padding: 30px; direction: rtl; font-family: Tahoma, Arial; }
   #report h2 { text-align: center; color: #1f4e79; margin: 0 0 6px; }
   #report .meta { text-align: center; font-size: 12px; color: #555; margin-bottom: 12px; }
   #report table { width: 100%; margin: 0; font-size: 13px; }
-  #report td img { width: 90px; height: 68px; }
+  #report th { position: static; }
   #report .shape { text-align: center; margin: 10px 0 16px; }
   #report .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
   #report .card { border: 1px solid #ccd; border-radius: 6px; padding: 5px; text-align: center; font-size: 11px; height: 196px; }
@@ -45,7 +72,13 @@
 </head>
 <body>
 
-<header>📍 رفع النقاط بالصور</header>
+<header>
+  <span>📍 رفع النقاط بالصور</span>
+  <span class="seg" id="viewSeg">
+    <button data-v="mobile">📱 جوال</button>
+    <button data-v="web">🖥️ ويب</button>
+  </span>
+</header>
 
 <div class="bar">
   <button id="captureBtn">📷 التقاط صورة / نقطة</button>
@@ -53,22 +86,35 @@
   <button id="undoBtn" disabled>↶ تراجع</button>
   <button id="clearBtn">مسح</button>
 </div>
+
+<div class="options">
+  <span>نوع الرسم:</span>
+  <span class="seg" id="shapeSeg">
+    <button data-s="closed">⬠ شكل مغلق (أرض)</button>
+    <button data-s="open">〰 مسار مفتوح (طريق)</button>
+  </span>
+</div>
+
 <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
 
-<div id="status">اضغط "التقاط صورة" عند كل زاوية — النقاط تتصل تلقائياً وتكوّن الشكل.</div>
+<div id="status">اضغط "التقاط صورة" عند كل نقطة — النقاط تُحفظ تلقائياً.</div>
 <div id="info"></div>
-<div id="map"></div>
 
-<table id="pointsTable">
-  <thead><tr><th>النقطة</th><th>الصورة</th><th>خط العرض</th><th>خط الطول</th><th>الدقة (م)</th><th>الوقت</th></tr></thead>
-  <tbody></tbody>
-</table>
+<div class="layout">
+  <div id="map"></div>
+  <div class="side">
+    <table id="pointsTable">
+      <thead><tr><th>النقطة</th><th>الصورة</th><th>خط العرض</th><th>خط الطول</th><th>الدقة (م)</th><th>الوقت</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
 
 <div id="report"></div>
 
 <script>
-  const points = [];
-  const markers = [];
+  let points = [];
+  let markers = [];
   const statusEl = document.getElementById('status');
   const infoEl = document.getElementById('info');
   const pdfBtn = document.getElementById('pdfBtn');
@@ -76,7 +122,51 @@
   const cameraInput = document.getElementById('cameraInput');
   const letter = i => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
 
-  // خريطة قمر صناعي
+  // ===== الإعدادات (تُحفظ في المتصفح) =====
+  function getSetting(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
+  function setSetting(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  let viewMode = getSetting('pm_view', window.innerWidth >= 900 ? 'web' : 'mobile');
+  let shapeMode = getSetting('pm_shape', 'closed');
+  const isClosed = () => shapeMode === 'closed';
+
+  // ===== الحفظ التلقائي (IndexedDB يتسع للصور) =====
+  const DB = {
+    open() {
+      return new Promise((res, rej) => {
+        const r = indexedDB.open('photoMapDB', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('data');
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async save(val) {
+      try {
+        const db = await this.open();
+        await new Promise((res, rej) => {
+          const tx = db.transaction('data', 'readwrite');
+          tx.objectStore('data').put(val, 'points');
+          tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+        });
+        return true;
+      } catch (e) { return false; }
+    },
+    async load() {
+      try {
+        const db = await this.open();
+        return await new Promise(res => {
+          const r = db.transaction('data').objectStore('data').get('points');
+          r.onsuccess = () => res(r.result || []);
+          r.onerror = () => res([]);
+        });
+      } catch (e) { return []; }
+    }
+  };
+  async function persist() {
+    const ok = await DB.save(points);
+    if (!ok) statusEl.textContent = '⚠️ تعذّر الحفظ التلقائي في هذا المتصفح — لا تغلق الصفحة قبل التصدير.';
+  }
+
+  // ===== الخريطة =====
   const map = L.map('map').setView([24.7136, 46.6753], 6);
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 20, maxNativeZoom: 19, attribution: 'Esri'
@@ -84,11 +174,27 @@
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 20, maxNativeZoom: 19
   }).addTo(map);
-
-  // الشكل (المربع) الذي يربط النقاط
   const shape = L.polygon([], { color: '#3b3bff', weight: 7, fillColor: '#3b3bff', fillOpacity: 0.15 }).addTo(map);
   const line = L.polyline([], { color: '#3b3bff', weight: 7 }).addTo(map);
 
+  // ===== أزرار الاختيار =====
+  function applyView() {
+    document.body.classList.toggle('web', viewMode === 'web');
+    document.body.classList.toggle('mobile', viewMode !== 'web');
+    document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === viewMode));
+    setTimeout(() => { map.invalidateSize(); fitAll(); }, 150);
+  }
+  function applyShape() {
+    document.querySelectorAll('#shapeSeg button').forEach(b => b.classList.toggle('on', b.dataset.s === shapeMode));
+  }
+  document.querySelectorAll('#viewSeg button').forEach(b => b.onclick = () => {
+    viewMode = b.dataset.v; setSetting('pm_view', viewMode); applyView();
+  });
+  document.querySelectorAll('#shapeSeg button').forEach(b => b.onclick = () => {
+    shapeMode = b.dataset.s; setSetting('pm_shape', shapeMode); applyShape(); redraw();
+  });
+
+  // ===== الالتقاط =====
   document.getElementById('captureBtn').onclick = () => cameraInput.click();
 
   cameraInput.onchange = async (e) => {
@@ -105,29 +211,38 @@
     );
   };
 
-  function addPoint(imgData, c) {
+  async function addPoint(imgData, c) {
     const p = {
       name: letter(points.length), img: imgData,
       lat: +c.latitude.toFixed(6), lng: +c.longitude.toFixed(6),
       acc: Math.round(c.accuracy), time: new Date().toLocaleString('ar-SA')
     };
     points.push(p);
+    addMarker(p);
+    if (points.length === 1) map.setView([p.lat, p.lng], 18);
+    redraw(true);
+    await persist();
+    statusEl.textContent = `تم حفظ النقطة ${p.name} ✔ (دقة ±${p.acc} م)`;
+  }
 
+  function addMarker(p) {
     const icon = L.divIcon({ className: '', html: `<div class="letter-icon">${p.name}</div>`, iconSize: [34, 34], iconAnchor: [17, 17] });
     const m = L.marker([p.lat, p.lng], { icon }).addTo(map).bindPopup(`
       <div class="popup-box"><img src="${p.img}"><b>النقطة ${p.name}</b><br>${p.lat}, ${p.lng}<br><small>${p.time}</small></div>`, { maxWidth: 200 });
     markers.push(m);
-
-    if (points.length === 1) map.setView([p.lat, p.lng], 18);
-    redraw();
-    statusEl.textContent = `تم حفظ النقطة ${p.name} ✔ (دقة ±${p.acc} م)`;
   }
 
-  function redraw() {
+  function fitAll() {
     const ll = points.map(p => [p.lat, p.lng]);
-    if (ll.length >= 3) { shape.setLatLngs(ll); line.setLatLngs([]); }
+    if (ll.length >= 2) map.fitBounds(L.latLngBounds(ll).pad(0.2));
+    else if (ll.length === 1) map.setView(ll[0], 18);
+  }
+
+  function redraw(fit) {
+    const ll = points.map(p => [p.lat, p.lng]);
+    if (isClosed() && ll.length >= 3) { shape.setLatLngs(ll); line.setLatLngs([]); }
     else { shape.setLatLngs([]); line.setLatLngs(ll); }
-    if (ll.length >= 2) map.fitBounds(L.latLngBounds(ll).pad(0.3));
+    if (fit) fitAll();
 
     const tbody = document.querySelector('#pointsTable tbody');
     tbody.innerHTML = '';
@@ -139,23 +254,29 @@
     });
 
     pdfBtn.disabled = undoBtn.disabled = points.length === 0;
-    const s = stats();
-    infoEl.textContent = points.length ? `عدد النقاط: ${points.length}` +
-      (points.length >= 3 ? ` — المساحة: ${s.area.toFixed(1)} م² — المحيط: ${s.perim.toFixed(1)} م` : '') : '';
+    infoEl.textContent = points.length ? `عدد النقاط: ${points.length} — ${summaryText()}` : '';
   }
 
-  // المساحة والمحيط (بالمتر) بإسقاط محلي
+  // ===== المساحة والطول =====
   function stats() {
-    if (points.length < 2) return { area: 0, perim: 0 };
+    if (points.length < 2) return { area: 0, perim: 0, xy: null };
     const R = 6371008.8, lat0 = points[0].lat * Math.PI / 180;
     const xy = points.map(p => [R * p.lng * Math.PI / 180 * Math.cos(lat0), R * p.lat * Math.PI / 180]);
     let area = 0, perim = 0;
+    const closed = isClosed() && xy.length >= 3;
     for (let i = 0; i < xy.length; i++) {
       const [x1, y1] = xy[i], [x2, y2] = xy[(i + 1) % xy.length];
       area += x1 * y2 - x2 * y1;
-      if (i < xy.length - 1 || xy.length >= 3) perim += Math.hypot(x2 - x1, y2 - y1);
+      if (i < xy.length - 1 || closed) perim += Math.hypot(x2 - x1, y2 - y1);
     }
-    return { area: Math.abs(area) / 2, perim, xy };
+    return { area: closed ? Math.abs(area) / 2 : 0, perim, xy, closed };
+  }
+  const fmtLen = m => m >= 1000 ? (m / 1000).toFixed(2) + ' كم' : m.toFixed(1) + ' م';
+  const fmtArea = a => a >= 10000 ? (a / 10000).toFixed(2) + ' هكتار (' + Math.round(a).toLocaleString('en') + ' م²)' : a.toFixed(1) + ' م²';
+  function summaryText() {
+    const s = stats();
+    if (points.length < 2) return '';
+    return s.closed ? `المساحة: ${fmtArea(s.area)} — المحيط: ${fmtLen(s.perim)}` : `طول المسار: ${fmtLen(s.perim)}`;
   }
 
   function resizeImage(file, maxSize) {
@@ -168,7 +289,7 @@
           const cv = document.createElement('canvas');
           cv.width = img.width * k; cv.height = img.height * k;
           cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
-          resolve(cv.toDataURL('image/jpeg', 0.8));
+          resolve(cv.toDataURL('image/jpeg', 0.75));
         };
         img.src = ev.target.result;
       };
@@ -176,7 +297,7 @@
     });
   }
 
-  // صورة الخريطة (قمر صناعي) مع الشكل والنقاط للطباعة
+  // ===== صورة الخريطة للطباعة =====
   const TILE_IMG = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/';
   const TILE_LBL = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/';
   function loadImg(src) {
@@ -194,13 +315,12 @@
   }
   async function mapImage() {
     const W = 1400, H = 900;
-    // اختيار التكبير المناسب ليظهر كل الشكل
     let z = 19;
     for (; z > 2; z--) {
       const xy = points.map(p => project(p.lat, p.lng, z));
       const w = Math.max(...xy.map(a => a[0])) - Math.min(...xy.map(a => a[0]));
       const h = Math.max(...xy.map(a => a[1])) - Math.min(...xy.map(a => a[1]));
-      if (w * 1.4 <= W && h * 1.4 <= H) break;
+      if (w * 1.3 <= W && h * 1.3 <= H) break;
     }
     const xy = points.map(p => project(p.lat, p.lng, z));
     const cx = (Math.max(...xy.map(a => a[0])) + Math.min(...xy.map(a => a[0]))) / 2;
@@ -222,22 +342,26 @@
       if (b) ctx.drawImage(b, tx * 256 - ox, ty * 256 - oy);
     }
 
-    // الشكل
     const pts = xy.map(([x, y]) => [x - ox, y - oy]);
     ctx.beginPath();
     pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-    if (pts.length >= 3) { ctx.closePath(); ctx.fillStyle = 'rgba(59,59,255,.18)'; ctx.fill(); }
-    ctx.strokeStyle = '#3b3bff'; ctx.lineWidth = 9; ctx.lineJoin = 'round'; ctx.stroke();
+    if (isClosed() && pts.length >= 3) { ctx.closePath(); ctx.fillStyle = 'rgba(59,59,255,.18)'; ctx.fill(); }
+    ctx.strokeStyle = '#3b3bff'; ctx.lineWidth = 8; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
 
-    // النقاط بالحروف
+    // حجم الدوائر يصغر تلقائياً إذا كانت النقاط متقاربة
+    let minD = Infinity;
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++)
+      minD = Math.min(minD, Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]));
+    const rad = Math.max(12, Math.min(22, minD / 2 - 1));
     pts.forEach(([x, y], i) => {
-      ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#000'; ctx.stroke();
-      ctx.fillStyle = '#000'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(points[i].name, x, y + 1);
+      ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.stroke();
+      const name = points[i].name;
+      ctx.fillStyle = '#000'; ctx.font = `bold ${Math.round(rad * (name.length > 1 ? 0.8 : 1))}px Arial`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(name, x, y + 1);
     });
 
-    // سهم الشمال
     ctx.fillStyle = '#fff'; ctx.font = 'bold 28px Arial'; ctx.textAlign = 'center';
     ctx.fillText('N ↑', 50, 45);
     ctx.font = '14px Arial'; ctx.textAlign = 'left'; ctx.fillText('Imagery © Esri', 10, H - 12);
@@ -246,85 +370,108 @@
     catch (e) { return null; }
   }
 
-  // رسم الشكل في التقرير (بديل إذا تعذّر تحميل الخريطة)
+  // رسم بديل إذا تعذّر تحميل الخريطة
   function shapeSVG() {
     const { xy } = stats();
-    if (!xy || xy.length < 2) return '';
+    if (!xy) return '';
     const W = 500, H = 300, pad = 30;
     const xs = xy.map(a => a[0]), ys = xy.map(a => a[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
     const k = Math.min((W - 2 * pad) / (maxX - minX || 1), (H - 2 * pad) / (maxY - minY || 1));
     const pts = xy.map(([x, y]) => [pad + (x - minX) * k, H - pad - (y - minY) * k]);
     const poly = pts.map(p => p.join(',')).join(' ');
+    const closed = isClosed() && xy.length >= 3;
     return `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-      <${xy.length >= 3 ? 'polygon' : 'polyline'} points="${poly}" fill="rgba(59,59,255,.15)" stroke="#3b3bff" stroke-width="4"/>
+      <${closed ? 'polygon' : 'polyline'} points="${poly}" fill="${closed ? 'rgba(59,59,255,.15)' : 'none'}" stroke="#3b3bff" stroke-width="4"/>
       ${pts.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="13" fill="#fff" stroke="#000" stroke-width="2.5"/>
-        <text x="${p[0]}" y="${p[1] + 5}" text-anchor="middle" font-size="14" font-weight="bold" font-family="Arial">${points[i].name}</text>`).join('')}
+        <text x="${p[0]}" y="${p[1] + 5}" text-anchor="middle" font-size="12" font-weight="bold" font-family="Arial">${points[i].name}</text>`).join('')}
     </svg>`;
   }
 
+  // ===== تصدير PDF =====
   pdfBtn.onclick = async () => {
-    statusEl.textContent = 'جاري إنشاء ملف PDF...';
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageW = 210, pageH = 297, margin = 10;
-    const report = document.getElementById('report');
-    const s = stats();
-    const pages = [];
+    pdfBtn.disabled = true;
+    try {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageW = 210, pageH = 297, margin = 10;
+      const report = document.getElementById('report');
+      const pages = [];
 
-    // صفحات جدول الإحداثيات (الأولى فيها رسم الشكل)
-    const tableRows = p => `<tr><td><b>${p.name}</b></td><td>${p.lat}</td><td>${p.lng}</td><td>${p.acc}</td><td>${p.time}</td></tr>`;
-    const tableHead = `<thead><tr><th>النقطة</th><th>خط العرض (Lat)</th><th>خط الطول (Lng)</th><th>الدقة (م)</th><th>الوقت</th></tr></thead>`;
-    const firstRows = 12, nextRows = 35;
-    statusEl.textContent = 'جاري تحميل صورة الخريطة...';
-    const mapImg = await mapImage();
-    pages.push(`
-      <h2>جدول إحداثيات النقاط</h2>
-      <div class="meta">عدد النقاط: ${points.length}${points.length >= 3 ? ` — المساحة: ${s.area.toFixed(1)} م² — المحيط: ${s.perim.toFixed(1)} م` : ''}<br>تاريخ التقرير: ${new Date().toLocaleString('ar-SA')}</div>
-      <div class="shape">${mapImg ? `<img src="${mapImg}" style="width:100%;border-radius:6px;border:1px solid #ccd">` : shapeSVG()}</div>
-      <table>${tableHead}<tbody>${points.slice(0, firstRows).map(tableRows).join('')}</tbody></table>`);
-    for (let i = firstRows; i < points.length; i += nextRows)
-      pages.push(`<table>${tableHead}<tbody>${points.slice(i, i + nextRows).map(tableRows).join('')}</tbody></table>`);
-
-    // صفحات الصور: 20 صورة في كل صفحة مع الإحداثيات والوقت
-    const perPage = 20, totalPhotoPages = Math.ceil(points.length / perPage);
-    for (let i = 0; i < points.length; i += perPage) {
+      const tableRows = p => `<tr><td><b>${p.name}</b></td><td>${p.lat}</td><td>${p.lng}</td><td>${p.acc}</td><td>${p.time}</td></tr>`;
+      const tableHead = `<thead><tr><th>النقطة</th><th>خط العرض (Lat)</th><th>خط الطول (Lng)</th><th>الدقة (م)</th><th>الوقت</th></tr></thead>`;
+      const firstRows = 12, nextRows = 35;
+      statusEl.textContent = 'جاري تحميل صورة الخريطة...';
+      const mapImg = await mapImage();
+      statusEl.textContent = 'جاري إنشاء ملف PDF...';
       pages.push(`
-        <h2>صور النقاط (${i / perPage + 1} / ${totalPhotoPages})</h2>
-        <div class="grid">${points.slice(i, i + perPage).map(p => `
-          <div class="card">
-            <img src="${p.img}">
-            <b>${p.name}</b>
-            <div class="c">${p.lat}, ${p.lng}</div>
-            <div>${p.time}</div>
-          </div>`).join('')}
-        </div>`);
-    }
+        <h2>جدول إحداثيات النقاط</h2>
+        <div class="meta">عدد النقاط: ${points.length} — ${isClosed() ? 'شكل مغلق' : 'مسار مفتوح'}${points.length >= 2 ? ' — ' + summaryText() : ''}<br>تاريخ التقرير: ${new Date().toLocaleString('ar-SA')}</div>
+        <div class="shape">${mapImg ? `<img src="${mapImg}" style="width:100%;border-radius:6px;border:1px solid #ccd">` : shapeSVG()}</div>
+        <table>${tableHead}<tbody>${points.slice(0, firstRows).map(tableRows).join('')}</tbody></table>`);
+      for (let i = firstRows; i < points.length; i += nextRows)
+        pages.push(`<table>${tableHead}<tbody>${points.slice(i, i + nextRows).map(tableRows).join('')}</tbody></table>`);
 
-    for (let c = 0; c < pages.length; c++) {
-      report.innerHTML = pages[c];
-      const canvas = await html2canvas(report, { scale: 2, backgroundColor: '#ffffff' });
-      const w = pageW - margin * 2;
-      const h = Math.min(canvas.height * w / canvas.width, pageH - margin * 2);
-      if (c > 0) pdf.addPage();
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.85), 'JPEG', margin, margin, w, h);
+      const perPage = 20, totalPhotoPages = Math.ceil(points.length / perPage);
+      for (let i = 0; i < points.length; i += perPage) {
+        pages.push(`
+          <h2>صور النقاط (${i / perPage + 1} / ${totalPhotoPages})</h2>
+          <div class="grid">${points.slice(i, i + perPage).map(p => `
+            <div class="card">
+              <img src="${p.img}">
+              <b>${p.name}</b>
+              <div class="c">${p.lat}, ${p.lng}</div>
+              <div>${p.time}</div>
+            </div>`).join('')}
+          </div>`);
+      }
+
+      for (let c = 0; c < pages.length; c++) {
+        statusEl.textContent = `جاري إنشاء الصفحة ${c + 1} من ${pages.length}...`;
+        report.innerHTML = pages[c];
+        const canvas = await html2canvas(report, { scale: 2, backgroundColor: '#ffffff' });
+        const w = pageW - margin * 2;
+        const h = Math.min(canvas.height * w / canvas.width, pageH - margin * 2);
+        if (c > 0) pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.85), 'JPEG', margin, margin, w, h);
+      }
+      report.innerHTML = '';
+      pdf.save('إحداثيات_النقاط.pdf');
+      statusEl.textContent = 'تم تصدير ملف PDF ✔';
+    } catch (e) {
+      statusEl.textContent = 'حدث خطأ أثناء التصدير: ' + e.message;
     }
-    report.innerHTML = '';
-    pdf.save('إحداثيات_النقاط.pdf');
-    statusEl.textContent = 'تم تصدير ملف PDF ✔';
+    pdfBtn.disabled = points.length === 0;
   };
 
-  undoBtn.onclick = () => {
+  // ===== تراجع ومسح =====
+  undoBtn.onclick = async () => {
     if (!points.length) return;
     points.pop(); map.removeLayer(markers.pop());
-    redraw(); statusEl.textContent = 'تم حذف آخر نقطة.';
+    redraw(); await persist();
+    statusEl.textContent = 'تم حذف آخر نقطة.';
   };
 
-  document.getElementById('clearBtn').onclick = () => {
-    if (!points.length || !confirm('مسح جميع النقاط؟')) return;
-    points.length = 0; markers.forEach(m => map.removeLayer(m)); markers.length = 0;
-    redraw(); statusEl.textContent = 'تم المسح.';
+  document.getElementById('clearBtn').onclick = async () => {
+    if (!points.length || !confirm('مسح جميع النقاط والصور نهائياً؟')) return;
+    points = []; markers.forEach(m => map.removeLayer(m)); markers = [];
+    redraw(); await persist();
+    statusEl.textContent = 'تم المسح.';
   };
+
+  // ===== البدء: استرجاع النقاط المحفوظة =====
+  applyView();
+  applyShape();
+  (async () => {
+    const saved = await DB.load();
+    if (saved.length) {
+      points = saved;
+      points.forEach(addMarker);
+      redraw(true);
+      statusEl.textContent = `تم استرجاع ${points.length} نقطة محفوظة ✔`;
+    }
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  })();
 </script>
 </body>
 </html>

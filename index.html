@@ -176,7 +176,77 @@
     });
   }
 
-  // رسم الشكل في التقرير
+  // صورة الخريطة (قمر صناعي) مع الشكل والنقاط للطباعة
+  const TILE_IMG = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/';
+  const TILE_LBL = 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/';
+  function loadImg(src) {
+    return new Promise(res => {
+      const im = new Image();
+      im.crossOrigin = 'anonymous';
+      im.onload = () => res(im);
+      im.onerror = () => res(null);
+      im.src = src;
+    });
+  }
+  function project(lat, lng, z) {
+    const s = 256 * Math.pow(2, z), r = lat * Math.PI / 180;
+    return [(lng + 180) / 360 * s, (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * s];
+  }
+  async function mapImage() {
+    const W = 1400, H = 900;
+    // اختيار التكبير المناسب ليظهر كل الشكل
+    let z = 19;
+    for (; z > 2; z--) {
+      const xy = points.map(p => project(p.lat, p.lng, z));
+      const w = Math.max(...xy.map(a => a[0])) - Math.min(...xy.map(a => a[0]));
+      const h = Math.max(...xy.map(a => a[1])) - Math.min(...xy.map(a => a[1]));
+      if (w * 1.4 <= W && h * 1.4 <= H) break;
+    }
+    const xy = points.map(p => project(p.lat, p.lng, z));
+    const cx = (Math.max(...xy.map(a => a[0])) + Math.min(...xy.map(a => a[0]))) / 2;
+    const cy = (Math.max(...xy.map(a => a[1])) + Math.min(...xy.map(a => a[1]))) / 2;
+    const ox = cx - W / 2, oy = cy - H / 2;
+
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#ddd'; ctx.fillRect(0, 0, W, H);
+
+    const jobs = [];
+    for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + W) / 256); tx++)
+      for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + H) / 256); ty++)
+        jobs.push(Promise.all([loadImg(`${TILE_IMG}${z}/${ty}/${tx}`), loadImg(`${TILE_LBL}${z}/${ty}/${tx}`)])
+          .then(([a, b]) => ({ tx, ty, a, b })));
+    for (const { tx, ty, a, b } of await Promise.all(jobs)) {
+      if (a) ctx.drawImage(a, tx * 256 - ox, ty * 256 - oy);
+      if (b) ctx.drawImage(b, tx * 256 - ox, ty * 256 - oy);
+    }
+
+    // الشكل
+    const pts = xy.map(([x, y]) => [x - ox, y - oy]);
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    if (pts.length >= 3) { ctx.closePath(); ctx.fillStyle = 'rgba(59,59,255,.18)'; ctx.fill(); }
+    ctx.strokeStyle = '#3b3bff'; ctx.lineWidth = 9; ctx.lineJoin = 'round'; ctx.stroke();
+
+    // النقاط بالحروف
+    pts.forEach(([x, y], i) => {
+      ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#000'; ctx.stroke();
+      ctx.fillStyle = '#000'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(points[i].name, x, y + 1);
+    });
+
+    // سهم الشمال
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 28px Arial'; ctx.textAlign = 'center';
+    ctx.fillText('N ↑', 50, 45);
+    ctx.font = '14px Arial'; ctx.textAlign = 'left'; ctx.fillText('Imagery © Esri', 10, H - 12);
+
+    try { return cv.toDataURL('image/jpeg', 0.9); }
+    catch (e) { return null; }
+  }
+
+  // رسم الشكل في التقرير (بديل إذا تعذّر تحميل الخريطة)
   function shapeSVG() {
     const { xy } = stats();
     if (!xy || xy.length < 2) return '';
@@ -205,11 +275,13 @@
     // صفحات جدول الإحداثيات (الأولى فيها رسم الشكل)
     const tableRows = p => `<tr><td><b>${p.name}</b></td><td>${p.lat}</td><td>${p.lng}</td><td>${p.acc}</td><td>${p.time}</td></tr>`;
     const tableHead = `<thead><tr><th>النقطة</th><th>خط العرض (Lat)</th><th>خط الطول (Lng)</th><th>الدقة (م)</th><th>الوقت</th></tr></thead>`;
-    const firstRows = 20, nextRows = 35;
+    const firstRows = 12, nextRows = 35;
+    statusEl.textContent = 'جاري تحميل صورة الخريطة...';
+    const mapImg = await mapImage();
     pages.push(`
       <h2>جدول إحداثيات النقاط</h2>
       <div class="meta">عدد النقاط: ${points.length}${points.length >= 3 ? ` — المساحة: ${s.area.toFixed(1)} م² — المحيط: ${s.perim.toFixed(1)} م` : ''}<br>تاريخ التقرير: ${new Date().toLocaleString('ar-SA')}</div>
-      <div class="shape">${shapeSVG()}</div>
+      <div class="shape">${mapImg ? `<img src="${mapImg}" style="width:100%;border-radius:6px;border:1px solid #ccd">` : shapeSVG()}</div>
       <table>${tableHead}<tbody>${points.slice(0, firstRows).map(tableRows).join('')}</tbody></table>`);
     for (let i = firstRows; i < points.length; i += nextRows)
       pages.push(`<table>${tableHead}<tbody>${points.slice(i, i + nextRows).map(tableRows).join('')}</tbody></table>`);

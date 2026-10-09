@@ -43,6 +43,31 @@
   .track-btn.on { background: #c62828; }
   .track-info { font-size: 12px; color: #455; }
 
+  /* ===== لوحة المحيط ===== */
+  #circleBtn { background: #6a1b9a; color: #fff; }
+  #circleCard { display: none; margin: 0 16px 10px; background: #fff; border: 2px solid #8e24aa; border-radius: 12px; padding: 12px; direction: rtl; }
+  #circleCard.open { display: block; }
+  .cc-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; color: #6a1b9a; font-size: 16px; }
+  .cc-x { background: #eee; color: #333; padding: 6px 10px; font-size: 14px; }
+  .cc-title { display: block; font-weight: bold; font-size: 15px; margin-bottom: 6px; }
+  .cc-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .cc-row input, .cc-row select { flex: 1; min-width: 0; font-size: 18px; padding: 10px 12px; border: 1px solid #b9a5c9; border-radius: 10px; font-family: inherit; background: #fff; }
+  .cc-row select { font-size: 15px; }
+  .cc-unit, .cc-lbl { font-weight: bold; color: #444; white-space: nowrap; }
+  .cc-opts { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; font-size: 15px; }
+  .cc-opts label { display: flex; align-items: center; gap: 8px; }
+  .cc-opts input { width: 20px; height: 20px; }
+  .cc-btns { display: flex; gap: 8px; }
+  #ccShow { flex: 2; background: #8e24aa; color: #fff; }
+  #ccClear { flex: 1; background: #eee; color: #a00; }
+  #ccResult { margin-top: 8px; font-size: 14px; line-height: 1.8; }
+  #ccResult.err { color: #b00020; font-weight: bold; }
+  .circle-info { position: absolute; z-index: 800; bottom: 10px; right: 10px; background: rgba(255,255,255,.95); border: 2px solid #8e24aa;
+    border-radius: 10px; padding: 6px 10px; font-size: 12px; line-height: 1.7; direction: rtl; pointer-events: none; max-width: 75%; box-shadow: 0 1px 6px rgba(0,0,0,.3); }
+  .circle-info b { color: #6a1b9a; }
+  .m-icon { background: #8e24aa; color: #fff; border: 3px solid #fff; border-radius: 50%; width: 36px; height: 36px; line-height: 30px;
+    text-align: center; font-weight: bold; font-size: 17px; font-family: Arial; box-shadow: 0 1px 6px rgba(0,0,0,.5); }
+
   /* ===== الكاميرا داخل الصفحة ===== */
   #camModal { display: none; position: fixed; inset: 0; z-index: 5000; background: #000; color: #fff; flex-direction: column; }
   #camModal.open { display: flex; }
@@ -152,6 +177,7 @@
   <button id="pdfBtn" disabled>📄 تصدير PDF</button>
   <button id="undoBtn" disabled>↶ تراجع</button>
   <button id="clearBtn">مسح</button>
+  <button id="circleBtn">⭕ المحيط</button>
 </div>
 
 <div class="options">
@@ -201,6 +227,32 @@
   <div class="stat"><small>إجمالي المسافة الممشاة</small><b id="sWalk">—</b><em id="sWalkSub"></em></div>
   <div class="stat"><small id="sSpecLabel">إجمالي المسافة المحددة</small><b id="sSpec">—</b><em id="sSpecSub"></em></div>
   <div class="stat pct"><small>نسبة المسافة المحددة من الممشاة</small><b id="sPct">—</b></div>
+</div>
+
+<!-- لوحة المحيط حول النقطة M -->
+<div id="circleCard">
+  <div class="cc-head">
+    <b>⭕ المحيط حول النقطة M</b>
+    <button id="ccClose" class="cc-x" aria-label="إغلاق">✖</button>
+  </div>
+  <label for="ccValue" id="ccTitle" class="cc-title">أدخل طول المحيط المطلوب بالكيلومتر</label>
+  <div class="cc-row">
+    <input id="ccValue" type="text" inputmode="decimal" autocomplete="off" placeholder="مثال: 10">
+    <span class="cc-unit">كم</span>
+  </div>
+  <div class="cc-opts">
+    <label><input type="radio" name="ccMode" value="circ" checked> اعتبار الرقم طول المحيط</label>
+    <label><input type="radio" name="ccMode" value="radius"> اعتبار الرقم نصف القطر</label>
+  </div>
+  <div class="cc-row">
+    <span class="cc-lbl">المركز M:</span>
+    <select id="ccCenter"></select>
+  </div>
+  <div class="cc-btns">
+    <button id="ccShow">⭕ إظهار المحيط</button>
+    <button id="ccClear">إزالة الدائرة</button>
+  </div>
+  <div id="ccResult"></div>
 </div>
 
 <div id="pickBar">
@@ -413,6 +465,139 @@
     updateTrackInfo();
   }
   trackBtn.onclick = () => watchId === null ? startTrack() : stopTrack();
+
+  // ===== المحيط (دائرة حول النقطة M) =====
+  const ccCard = document.getElementById('circleCard');
+  const ccValue = document.getElementById('ccValue');
+  const ccCenter = document.getElementById('ccCenter');
+  const ccResult = document.getElementById('ccResult');
+  let circleLayer = null, circleMarker = null, circleInfo = null, ccTimer = null;
+  let circleState = (() => { try { return JSON.parse(getSetting('pm_circle', 'null')) || {}; } catch (e) { return {}; } })();
+  const saveCircle = () => setSetting('pm_circle', JSON.stringify(circleState));
+  const ccMode = () => (document.querySelector('input[name="ccMode"]:checked') || {}).value || 'circ';
+
+  // يقبل 0.5 و 3,5 و ٣٫٥
+  function parseKm(s) {
+    const t = String(s || '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٫,]/g, '.').trim();
+    const n = parseFloat(t);
+    return isFinite(n) && n > 0 ? n : null;
+  }
+  // الحساب كله بالمتر
+  function circleCalc(km, mode) {
+    const radius = mode === 'radius' ? km * 1000 : (km * 1000) / (2 * Math.PI);
+    return { radius, circ: 2 * Math.PI * radius, area: Math.PI * radius * radius };
+  }
+  const fmtM2 = a => Math.round(a).toLocaleString('en') + ' م²';
+  const fmtKm2 = a => (a / 1e6).toLocaleString('en', { maximumFractionDigits: 3 }) + ' كم²';
+  const fmtRad = r => r >= 1000 ? (r / 1000).toFixed(3) + ' كم (' + r.toFixed(1) + ' م)' : r.toFixed(1) + ' م';
+
+  function fillCenters(selectKey) {
+    const cur = selectKey || ccCenter.value || circleState.centerKey;
+    ccCenter.innerHTML = points.map((p, i) => `<option value="p${i}">النقطة ${p.name} — ${ll(p)}</option>`).join('') +
+      '<option value="here">📍 موقعي الحالي</option>';
+    const valid = [...ccCenter.options].some(o => o.value === cur);
+    ccCenter.value = valid ? cur : (points.length ? 'p' + (points.length - 1) : 'here');
+  }
+  function updateCcTitle() {
+    document.getElementById('ccTitle').textContent = ccMode() === 'radius'
+      ? 'أدخل نصف القطر بالكيلومتر' : 'أدخل طول المحيط المطلوب بالكيلومتر';
+  }
+  function openCircleCard(selectKey) {
+    fillCenters(selectKey);
+    ccCard.classList.add('open');
+    updateCcTitle();
+  }
+  async function resolveCenter(useCache) {
+    const k = ccCenter.value;
+    if (k === 'here') {
+      if (useCache && circleState.centerKey === 'here' && circleState.center) return circleState.center;
+      ccResult.className = ''; ccResult.textContent = 'جاري تحديد موقعك الحالي...';
+      const c = await getHere();   // يطلب إذن الموقع
+      return { lat: c.latitude, lng: c.longitude, label: 'موقعي الحالي' };
+    }
+    const p = points[+k.slice(1)];
+    return p ? { lat: p.lat, lng: p.lng, label: 'النقطة ' + p.name } : null;
+  }
+  function removeCircleLayers() {
+    if (circleLayer) map.removeLayer(circleLayer);
+    if (circleMarker) map.removeLayer(circleMarker);
+    if (circleInfo) circleInfo.remove();
+    circleLayer = circleMarker = circleInfo = null;
+  }
+  function ccError(msg) { ccResult.className = 'err'; ccResult.textContent = msg; }
+
+  async function drawCircle(opts = {}) {
+    const km = parseKm(ccValue.value);
+    if (!km) { removeCircleLayers(); return ccError('أدخل رقماً أكبر من صفر، مثل 0.5 أو 10'); }
+    let c;
+    try { c = await resolveCenter(opts.useCache); }
+    catch (e) { return ccError('تعذّر تحديد موقعك الحالي — اسمح للمتصفح بالوصول إلى الموقع.'); }
+    if (!c) return ccError('اختر مركز الدائرة M');
+
+    const mode = ccMode();
+    const k = circleCalc(km, mode);
+    removeCircleLayers();   // حذف الدائرة السابقة قبل رسم الجديدة
+    circleLayer = L.circle([c.lat, c.lng], {
+      radius: k.radius, color: '#8e24aa', weight: 4, fillColor: '#ce93d8', fillOpacity: 0.18
+    }).addTo(map);
+    const icon = L.divIcon({ className: '', html: '<div class="m-icon">M</div>', iconSize: [36, 36], iconAnchor: [18, 18] });
+    circleMarker = L.marker([c.lat, c.lng], { icon, zIndexOffset: 1000 }).addTo(map)
+      .bindPopup(`<div class="popup-box"><b>مركز المحيط M</b><br>${c.label}<br><span dir="ltr">${c.lat.toFixed(7)}, ${c.lng.toFixed(7)}</span></div>`);
+
+    const html = `<b>⭕ المحيط حول M</b><br>
+      المركز M: ${c.label}<br>
+      طول المحيط: <b>${fmtLen(k.circ)}</b><br>
+      نصف القطر: <b>${fmtRad(k.radius)}</b><br>
+      المساحة: <b>${fmtM2(k.area)}</b><br>
+      = <b>${fmtKm2(k.area)}</b>`;
+    circleInfo = document.createElement('div');
+    circleInfo.className = 'circle-info';
+    circleInfo.innerHTML = html;
+    map.getContainer().appendChild(circleInfo);
+
+    ccResult.className = '';
+    ccResult.innerHTML = (mode === 'circ'
+      ? `نصف القطر = (${km} × 1000) ÷ (2 × π) = <b>${k.radius.toFixed(1)} م</b>`
+      : `نصف القطر = ${km} × 1000 = <b>${k.radius.toFixed(1)} م</b>`) +
+      `<br>طول المحيط: <b>${fmtLen(k.circ)}</b> — المساحة: <b>${fmtM2(k.area)}</b> (${fmtKm2(k.area)})`;
+
+    circleState = { value: ccValue.value, mode, centerKey: ccCenter.value, center: c, shown: true, radius: k.radius, circ: k.circ, area: k.area };
+    saveCircle();
+    if (opts.fit !== false) map.fitBounds(circleLayer.getBounds(), { padding: [20, 20] });
+  }
+  function clearCircle() {
+    removeCircleLayers();
+    circleState.shown = false; saveCircle();
+    ccResult.className = ''; ccResult.textContent = 'تمت إزالة الدائرة.';
+  }
+
+  document.getElementById('circleBtn').onclick = () => {
+    if (ccCard.classList.contains('open')) ccCard.classList.remove('open'); else openCircleCard();
+  };
+  document.getElementById('ccClose').onclick = () => ccCard.classList.remove('open');
+  document.getElementById('ccShow').onclick = async () => {
+    await drawCircle();
+    // على الجوال: الانتقال للخريطة حتى تظهر الدائرة كاملة
+    if (circleLayer) document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+  document.getElementById('ccClear').onclick = clearCircle;
+  // عند تغيير القيمة تُرسم الدائرة الجديدة مباشرة
+  ccValue.addEventListener('input', () => {
+    clearTimeout(ccTimer);
+    ccTimer = setTimeout(() => { if (parseKm(ccValue.value)) drawCircle({ useCache: true }); }, 450);
+  });
+  ccValue.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); drawCircle(); } });
+  document.querySelectorAll('input[name="ccMode"]').forEach(r => r.onchange = () => {
+    updateCcTitle();
+    if (parseKm(ccValue.value)) drawCircle({ useCache: true });
+  });
+  ccCenter.onchange = () => { if (parseKm(ccValue.value)) drawCircle(); };
+
+  // بعد التقاط أو رفع صورة: تظهر اللوحة ومركزها النقطة الجديدة
+  function onNewPhoto(i) {
+    openCircleCard('p' + i);
+    if (circleState.shown && parseKm(ccValue.value)) drawCircle({ fit: false });
+  }
 
   // ===== أزرار الاختيار =====
   function applyView() {
@@ -782,6 +967,7 @@
     statusEl.textContent = `تم حفظ النقطة ${p.name} ✔ ` +
       (p.src === 'ocr' ? `(من نص الصورة: ${ll(p)})` : p.src === 'exif' ? '(الموقع من داخل الصورة)' : `(دقة ±${p.acc} م)`) +
       (watchId === null ? ' — تنبيه: تتبع المشي متوقف، فلن تُحسب المسافة الممشاة.' : '');
+    onNewPhoto(points.length - 1);
     if (autoPick.checked && !opt.noPick) startPick(points.length - 1);
   }
   const SRC_TAG = { ocr: '📝 من نص الصورة', exif: '📷 من الصورة', edit: '✏️ معدّلة يدوياً' };
@@ -926,6 +1112,7 @@
 
     pdfBtn.disabled = undoBtn.disabled = points.length === 0;
     updateSummary();
+    fillCenters();
   }
 
   // تفصيل الجمع لعرضه تحت الرقم، مثل: A 33.2 + B 42.8
@@ -993,6 +1180,11 @@
   async function mapImage() {
     const W = 1400, H = 900;
     const all = [...photoCoords(), ...pickedCoords(), ...track];
+    const circ = circleLayer && circleState.center ? circleState : null;
+    if (circ) {
+      const { lat, lng } = circ.center, dLat = circ.radius / 111320, dLng = circ.radius / (111320 * Math.cos(lat * Math.PI / 180));
+      all.push({ lat: lat + dLat, lng }, { lat: lat - dLat, lng }, { lat, lng: lng + dLng }, { lat, lng: lng - dLng });
+    }
     let z = 19;
     for (; z > 2; z--) {
       const xy = all.map(p => project(p.lat, p.lng, z));
@@ -1019,6 +1211,21 @@
     for (const { tx, ty, a, b } of await Promise.all(jobs)) {
       if (a) ctx.drawImage(a, tx * 256 - ox, ty * 256 - oy);
       if (b) ctx.drawImage(b, tx * 256 - ox, ty * 256 - oy);
+    }
+
+    // دائرة المحيط حول M (بنفسجي)
+    if (circ) {
+      const [mx, my] = toPx(circ.center);
+      const mpp = 156543.03392 * Math.cos(circ.center.lat * Math.PI / 180) / Math.pow(2, z);
+      ctx.beginPath(); ctx.arc(mx, my, circ.radius / mpp, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(206,147,216,.22)'; ctx.fill();
+      ctx.setLineDash([]); ctx.strokeStyle = '#8e24aa'; ctx.lineWidth = 6; ctx.stroke();
+      // علامة M فوق المركز مباشرة حتى لا تغطيها علامة الصورة
+      ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(mx, my - 30); ctx.strokeStyle = '#8e24aa'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.beginPath(); ctx.arc(mx, my - 50, 20, 0, Math.PI * 2);
+      ctx.fillStyle = '#8e24aa'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('M', mx, my - 49);
     }
 
     // مسار المشي (أخضر)
@@ -1117,8 +1324,13 @@
         <h2>تقرير إحداثيات النقاط</h2>
         <div class="meta">عدد النقاط: ${points.length} — المحددة: ${n} — حد دقة GPS: ${ACC_LIMIT} م<br>تاريخ التقرير: ${new Date().toLocaleString('ar-SA')}</div>
         ${sum}
+        ${circleLayer && circleState.center ? `<div class="sumrow">
+          <div>طول المحيط حول M<b>${fmtLen(circleState.circ)}</b>المركز: ${circleState.center.label}</div>
+          <div>نصف القطر<b>${fmtRad(circleState.radius)}</b>${circleState.mode === 'radius' ? 'مُدخل كنصف قطر' : 'محسوب من المحيط'}</div>
+          <div>مساحة الدائرة<b>${fmtM2(circleState.area)}</b>${fmtKm2(circleState.area)}</div>
+        </div>` : ''}
         <div class="shape">${mapImg ? `<img src="${mapImg}" style="width:100%;border-radius:6px;border:1px solid #ccd">` : ''}
-          <div class="legend"><span style="background:#3b3bff"></span>إحداثيات الصور<span style="background:#ef6c00"></span>الإحداثيات المحددة<span style="background:#00e676"></span>مسار المشي</div>
+          <div class="legend"><span style="background:#3b3bff"></span>إحداثيات الصور<span style="background:#ef6c00"></span>الإحداثيات المحددة<span style="background:#00e676"></span>مسار المشي${circleLayer ? '<span style="background:#8e24aa"></span>المحيط حول M' : ''}</div>
         </div>
         <table>${head}<tbody>${points.slice(0, firstRows).map(row).join('')}</tbody></table>`);
       for (let i = firstRows; i < points.length; i += nextRows)
@@ -1201,6 +1413,12 @@
       redraw(true);
       statusEl.textContent = `تم استرجاع ${points.length} نقطة محفوظة ✔`;
     }
+    // استرجاع آخر دائرة محيط
+    if (circleState.value) ccValue.value = circleState.value;
+    if (circleState.mode) { const r = document.querySelector(`input[name="ccMode"][value="${circleState.mode}"]`); if (r) r.checked = true; }
+    fillCenters(circleState.centerKey);
+    updateCcTitle();
+    if (circleState.shown && parseKm(ccValue.value)) { ccCard.classList.add('open'); drawCircle({ useCache: true }); }
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   })();
 </script>

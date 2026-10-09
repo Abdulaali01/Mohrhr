@@ -350,7 +350,8 @@
   const fmtLen = m => m >= 1000 ? (m / 1000).toFixed(2) + ' كم' : m.toFixed(1) + ' م';
   const fmtArea = a => a >= 10000 ? (a / 10000).toFixed(2) + ' هكتار' : a.toFixed(1) + ' م²';
   const fmtAreaFull = a => a >= 10000 ? (a / 10000).toFixed(2) + ' هكتار (' + Math.round(a).toLocaleString('en') + ' م²)' : a.toFixed(1) + ' م²';
-  const ll = c => `${c.lat.toFixed(6)}, ${c.lng.toFixed(6)}`;
+  // إذا قُرئت الإحداثيات من نص الصورة تُعرض كما هي مكتوبة بالضبط
+  const ll = c => c.latText ? `${c.latText}, ${c.lngText}` : `${c.lat.toFixed(6)}, ${c.lng.toFixed(6)}`;
 
   // ===== الخريطة =====
   const map = L.map('map').setView([24.7136, 46.6753], 6);
@@ -496,6 +497,83 @@
     if (!out.date && ifd0[0x0132]) out.date = toDate(str(ifd0[0x0132]));
     return out;
   }
+  // ===== قراءة الإحداثيات المكتوبة على الصورة (OCR) =====
+  let ocrWorker = null;
+  function loadScript(src) {
+    return new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = res; s.onerror = () => rej(new Error('load ' + src));
+      document.head.appendChild(s);
+    });
+  }
+  async function getOcr() {
+    if (ocrWorker) return ocrWorker;
+    if (!window.Tesseract) await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+    ocrWorker = await Tesseract.createWorker('eng');
+    await ocrWorker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
+    return ocrWorker;
+  }
+  // استخراج خط العرض وخط الطول من النص المقروء
+  function parseCoords(text) {
+    const t = text
+      .replace(/(\d)[Oo]|[Oo](\d)/g, (m, a, b) => (a || '') + '0' + (b || ''))
+      .replace(/(\d)\.\s+(\d)/g, '$1.$2')
+      .replace(/(\d),(\d{4,})/g, '$1.$2');
+    const ok = (a, b) => Math.abs(a) <= 90 && Math.abs(b) <= 180 && a !== 0 && b !== 0;
+    // صيغة عشرية: 21.2457513 40.36679293
+    const re = /(-?\d{1,3}\.\d{4,})[^\d\-]{1,12}?(-?\d{1,3}\.\d{4,})/g;
+    let m;
+    while ((m = re.exec(t))) {
+      let a = m[1], b = m[2];
+      if (Math.abs(+a) > 90 && Math.abs(+b) <= 90) [a, b] = [b, a];
+      if (ok(+a, +b)) return { lat: +a, lng: +b, latText: a, lngText: b };
+    }
+    // صيغة درجات ودقائق وثوانٍ: 21°14'44.7"N 40°22'0.4"E
+    const d = [...t.matchAll(/(\d{1,3})\s*[°º]\s*(\d{1,2})\s*['′’]\s*([\d.]+)\s*["″”]?\s*([NSEW])/gi)];
+    if (d.length >= 2) {
+      const v = x => (+x[1] + +x[2] / 60 + +x[3] / 3600) * (/[SW]/i.test(x[4]) ? -1 : 1);
+      const la = d.find(x => /[NS]/i.test(x[4])), lo = d.find(x => /[EW]/i.test(x[4]));
+      if (la && lo && ok(v(la), v(lo))) return { lat: v(la), lng: v(lo), latText: la[0].trim(), lngText: lo[0].trim() };
+    }
+    return null;
+  }
+  function fileToImage(file) {
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file), im = new Image();
+      im.onload = () => { res(im); setTimeout(() => URL.revokeObjectURL(url), 1000); };
+      im.onerror = rej; im.src = url;
+    });
+  }
+  async function ocrCoords(file) {
+    const worker = await getOcr();
+    const im = await fileToImage(file);
+    const W = im.naturalWidth, H = im.naturalHeight;
+    // نجرب أعلى الصورة ثم أسفلها، بتنظيف للنص الأبيض أولاً ثم بدونه
+    const regions = [[0, 0, W, H * 0.45], [0, H * 0.55, W, H * 0.45]];
+    for (const clean of [true, false]) {
+      for (const [x, y, w, h] of regions) {
+        const k = 1400 / w;
+        const cv = document.createElement('canvas');
+        cv.width = 1400; cv.height = Math.round(h * k);
+        const ctx = cv.getContext('2d');
+        ctx.drawImage(im, x, y, w, h, 0, 0, cv.width, cv.height);
+        const id = ctx.getImageData(0, 0, cv.width, cv.height), px = id.data;
+        for (let i = 0; i < px.length; i += 4) {
+          const r = px[i], g = px[i + 1], b = px[i + 2];
+          let v;
+          if (clean) { const mx = Math.max(r, g, b), mn = Math.min(r, g, b); v = (mn > 200 && mx - mn < 40) ? 0 : 255; }
+          else v = 0.3 * r + 0.59 * g + 0.11 * b;
+          px[i] = px[i + 1] = px[i + 2] = v;
+        }
+        ctx.putImageData(id, 0, 0);
+        const { data } = await worker.recognize(cv);
+        const c = parseCoords(data.text || '');
+        if (c) return c;
+      }
+    }
+    return null;
+  }
+
   function getHere() {
     return new Promise((res, rej) => {
       if (!navigator.geolocation) return rej(new Error('no geolocation'));
@@ -520,30 +598,48 @@
     items.sort((a, b) => a.t - b.t);   // ترتيب حسب وقت التصوير
 
     const hasGps = it => it.ex && it.ex.lat !== undefined;
-    let here = null;
-    if (items.some(it => !hasGps(it))) {
-      statusEl.textContent = 'بعض الصور بلا موقع — جاري أخذ موقعك الحالي...';
-      try { here = await getHere(); } catch (_) {}
-    }
+    let here = null, hereTried = false;
+    const getHereOnce = async () => {
+      if (!hereTried) { hereTried = true; statusEl.textContent = 'صورة بلا إحداثيات — جاري أخذ موقعك الحالي...'; try { here = await getHere(); } catch (_) {} }
+      return here;
+    };
 
     const batch = items.length > 1;
-    let fromPhoto = 0, fromHere = 0, failed = 0;
-    for (const it of items) {
+    let fromText = 0, fromPhoto = 0, fromHere = 0, failed = 0, ocrDown = false;
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
       const img = await resizeImage(it.f, 800);
       const time = it.ex && it.ex.date ? it.ex.date.toLocaleString('ar-SA') : null;
-      if (hasGps(it)) {
+
+      // 1) الإحداثيات المكتوبة على الصورة
+      let oc = null;
+      if (!ocrDown) {
+        statusEl.textContent = `جاري قراءة الإحداثيات المكتوبة على الصورة ${batch ? (i + 1) + ' من ' + items.length : ''}... (أول مرة تأخذ وقتاً أطول)`;
+        try { oc = await ocrCoords(it.f); } catch (e) { ocrDown = true; }
+      }
+      // إذا كانت الصورة فيها موقع داخلي ويختلف كثيراً عن النص المقروء، فالقراءة غالباً خاطئة
+      if (oc && hasGps(it) && distM(oc, it.ex) > 500) oc = null;
+
+      if (oc) {
+        await addPoint(img, { latitude: oc.lat, longitude: oc.lng, accuracy: null }, { time, src: 'ocr', noPick: batch, latText: oc.latText, lngText: oc.lngText });
+        fromText++;
+      } else if (hasGps(it)) {
+        // 2) الموقع المحفوظ داخل الصورة
         await addPoint(img, { latitude: it.ex.lat, longitude: it.ex.lng, accuracy: it.ex.acc }, { time, src: 'exif', noPick: batch });
         fromPhoto++;
-      } else if (here) {
+      } else if (await getHereOnce()) {
+        // 3) موقعك الحالي
         await addPoint(img, here, { time, src: 'gps', noPick: batch });
         fromHere++;
       } else failed++;
     }
 
     const parts = [];
+    if (fromText) parts.push(`${fromText} من الإحداثيات المكتوبة على الصورة 📝`);
     if (fromPhoto) parts.push(`${fromPhoto} من موقع التصوير داخل الصورة 📷`);
     if (fromHere) parts.push(`${fromHere} من موقعك الحالي (الصورة بلا موقع)`);
     if (failed) parts.push(`${failed} لم تُضف لتعذّر تحديد الموقع`);
+    if (ocrDown) parts.push('تعذّر تشغيل قارئ النص — تأكد من الإنترنت');
     statusEl.textContent = (batch ? `تمت إضافة الصور: ` : 'تمت الإضافة: ') + parts.join(' — ') +
       (batch && autoPick.checked ? ' — حدّد الإحداثيات الثانية من الجدول.' : '');
   }
@@ -680,16 +776,31 @@
       time: opt.time || new Date().toLocaleString('ar-SA'), pick: null,
       src: opt.src || 'gps'
     };
+    if (opt.latText) { p.lat = +c.latitude; p.lng = +c.longitude; p.latText = opt.latText; p.lngText = opt.lngText; }
     points.push(p);
     if (points.length === 1) map.setView([p.lat, p.lng], 18);
     redraw(true);
     await persist();
     statusEl.textContent = `تم حفظ النقطة ${p.name} ✔ ` +
-      (p.src === 'exif' ? '(الموقع من داخل الصورة)' : `(دقة ±${p.acc} م)`) +
+      (p.src === 'ocr' ? `(من نص الصورة: ${ll(p)})` : p.src === 'exif' ? '(الموقع من داخل الصورة)' : `(دقة ±${p.acc} م)`) +
       (watchId === null ? ' — تنبيه: تتبع المشي متوقف، فلن تُحسب المسافة الممشاة.' : '');
     if (autoPick.checked && !opt.noPick) startPick(points.length - 1);
   }
-  const accText = p => p.acc != null ? p.acc : (p.src === 'exif' ? 'من الصورة' : '—');
+  const SRC_TAG = { ocr: '📝 من نص الصورة', exif: '📷 من الصورة', edit: '✏️ معدّلة يدوياً' };
+  const accText = p => p.acc != null ? p.acc : ({ ocr: 'نص الصورة', exif: 'من الصورة', edit: 'يدوي' }[p.src] || '—');
+
+  // تعديل إحداثيات الصورة يدوياً (لتصحيح أي قراءة خاطئة)
+  async function editCoords(i) {
+    const p = points[i];
+    const v = prompt(`إحداثيات النقطة ${p.name} (خط العرض، خط الطول):`, ll(p).replace(',', ''));
+    if (v === null) return;
+    const c = parseCoords(v.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+    const m = c || (() => { const n = v.match(/-?\d+(\.\d+)?/g); return n && n.length >= 2 && Math.abs(+n[0]) <= 90 && Math.abs(+n[1]) <= 180 ? { lat: +n[0], lng: +n[1], latText: n[0], lngText: n[1] } : null; })();
+    if (!m) { alert('اكتب الإحداثيتين بهذا الشكل: 21.2457513 40.36679293'); return; }
+    p.lat = m.lat; p.lng = m.lng; p.latText = m.latText; p.lngText = m.lngText; p.src = 'edit'; p.acc = null;
+    redraw(); await persist();
+    statusEl.textContent = `تم تعديل إحداثيات النقطة ${p.name} ✔`;
+  }
 
   // ===== تحديد الإحداثية الثانية على الخريطة =====
   function startPick(i) {
@@ -787,10 +898,11 @@
       tr.innerHTML = `
         <td><b>${p.name}</b></td>
         <td><img src="${p.img}"></td>
-        <td><span class="ll">${ll(p)}</span>${p.src === 'exif' ? '<br><small style="color:#2e7d32">📷 من الصورة</small>' : ''}</td>
+        <td><span class="ll">${ll(p)}</span>${SRC_TAG[p.src] ? `<br><small style="color:#2e7d32">${SRC_TAG[p.src]}</small>` : ''}<br><button class="mini btn-del edit-c" style="color:#1f4e79">✏️ تعديل</button></td>
         <td>${p.pick ? `<span class="ll pk">${ll(p.pick)}</span><br>` : ''}</td>
         <td>${d !== null ? `<span class="dist">${fmtLen(d)}</span>` : '—'}</td>
         <td><small>${p.time}</small></td>`;
+      tr.querySelector('.edit-c').onclick = ev => { ev.stopPropagation(); editCoords(i); };
       const cell = tr.children[3];
       const b1 = document.createElement('button');
       b1.className = 'mini btn-pick';

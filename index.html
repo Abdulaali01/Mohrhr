@@ -314,19 +314,17 @@
   const pickedCoords = () => points.filter(p => p.pick).map(p => p.pick);
   const pickedCount = () => points.filter(p => p.pick).length;
 
-  // إجمالي المسافة المحددة (بالمتر)
+  // «المسافة المحددة» لنقطة واحدة = المسافة بين النقطة وإحداثيتها المحددة (A ↔ A')، بالمتر
+  // مقرّبة لأقرب 0.1 م حتى يطابق المجموع الأرقام الظاهرة في الجدول تماماً
+  const pairDist = p => p.pick ? Math.round(distM(p, p.pick) * 10) / 10 : null;
+
+  // إجمالي المسافة المحددة (بالمتر) = مجموع «المسافة المحددة» للنقاط المختارة فقط
+  // لا يدخل فيه أي خط بين النقاط، ولا المسافة بين نقطة وأخرى
   function specStats() {
-    const k = pickedCoords(), n = k.length;
-    if (n < 2) return { n, dist: null, closed: false, label: 'إجمالي المسافة المحددة', area: null };
-    let d = 0;
-    for (let i = 0; i < n - 1; i++) d += distM(k[i], k[i + 1]);
-    const closed = n >= 3 && isClosed();          // نقطتان = مسار مفتوح دائماً
-    if (closed) d += distM(k[n - 1], k[0]);       // إغلاق الشكل: من آخر نقطة إلى أول نقطة
-    return {
-      n, dist: d, closed,
-      label: closed ? 'محيط الشكل (مغلق)' : 'إجمالي المسافة المحددة (مسار مفتوح)',
-      area: closed ? polyStats(k, true).area : null
-    };
+    const chosen = points.filter(p => p.pick);
+    if (!chosen.length) return { n: 0, dist: null, label: 'إجمالي المسافة المحددة' };
+    const dist = Math.round(chosen.reduce((s, p) => s + pairDist(p), 0) * 10) / 10;
+    return { n: chosen.length, dist, label: 'إجمالي المسافة المحددة' };
   }
 
   // إجمالي المسافة الممشاة (بالمتر): مجموع المسافات بين كل نقطة مسار والتي تليها
@@ -341,7 +339,7 @@
   function ratio() {
     const w = walkedDist(), s = specStats();
     if (!(w > 0) || !isFinite(w)) return { ok: false, text: NO_WALK_MSG };
-    if (s.dist === null) return { ok: false, text: 'حدّد إحداثيتين على الأقل' };
+    if (s.dist === null) return { ok: false, text: 'حدّد نقطة واحدة على الأقل' };
     const pct = s.dist / w * 100;
     if (!isFinite(pct)) return { ok: false, text: NO_WALK_MSG };
     const r = pct < 10 ? Math.round(pct * 100) / 100 : Math.round(pct * 10) / 10;
@@ -826,7 +824,7 @@
     stopPick();
     redraw();
     await persist();
-    statusEl.textContent = `تم تحديد ${pickName(p)} — تبعد ${fmtLen(distM(p, p.pick))} عن ${p.name} ✔`;
+    statusEl.textContent = `تم تحديد ${pickName(p)} — تبعد ${fmtLen(pairDist(p))} عن ${p.name} ✔`;
   });
 
   async function removePick(i) {
@@ -862,7 +860,7 @@
       const box = document.createElement('div');
       box.className = 'popup-box';
       box.innerHTML = `<img src="${p.img}"><b>النقطة ${p.name}</b><br><span dir="ltr">${ll(p)}</span><br><small>${p.time}</small>
-        ${p.pick ? `<br><small style="color:#e65100">${pickName(p)}: <span dir="ltr">${ll(p.pick)}</span> — ${fmtLen(distM(p, p.pick))}</small>` : ''}<br>`;
+        ${p.pick ? `<br><small style="color:#e65100">${pickName(p)}: <span dir="ltr">${ll(p.pick)}</span> — ${fmtLen(pairDist(p))}</small>` : ''}<br>`;
       const btn = document.createElement('button');
       btn.textContent = p.pick ? '📍 تغيير الإحداثية الثانية' : '📍 تحديد إحداثية ثانية';
       btn.onclick = () => startPick(i);
@@ -881,7 +879,7 @@
         });
         L.polyline([[p.lat, p.lng], [p.pick.lat, p.pick.lng]], { color: '#fff', weight: 2, dashArray: '4 5' })
           .addTo(layer)
-          .bindTooltip(fmtLen(distM(p, p.pick)), { permanent: true, direction: 'center', className: 'dist-tip' });
+          .bindTooltip(fmtLen(pairDist(p)), { permanent: true, direction: 'center', className: 'dist-tip' });
       }
     });
 
@@ -892,7 +890,7 @@
     tbody.innerHTML = '';
     let sumD = 0;
     points.forEach((p, i) => {
-      const d = p.pick ? distM(p, p.pick) : null;
+      const d = pairDist(p);
       if (d !== null) sumD += d;
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -923,11 +921,18 @@
     const sp = specStats();
     document.querySelector('#pointsTable tfoot').innerHTML = n ? `
       <tr><td colspan="4">عدد الإحداثيات المحددة: ${n} من ${points.length}</td>
-      <td colspan="2">متوسط المسافة: ${fmtLen(sumD / n)}</td></tr>
-      ${sp.dist !== null ? `<tr><td colspan="4">${sp.label}</td><td colspan="2">${fmtLen(sp.dist)}</td></tr>` : ''}` : '';
+      <td colspan="2">متوسط المسافة: ${fmtLen(sp.dist / n)}</td></tr>
+      <tr><td colspan="4">${sp.label}</td><td colspan="2">${fmtLen(sp.dist)}</td></tr>` : '';
 
     pdfBtn.disabled = undoBtn.disabled = points.length === 0;
     updateSummary();
+  }
+
+  // تفصيل الجمع لعرضه تحت الرقم، مثل: A 33.2 + B 42.8
+  function sumBreakdown() {
+    const c = points.filter(p => p.pick);
+    const parts = c.slice(0, 6).map(p => `${p.name} ${pairDist(p).toFixed(1)}`);
+    return `${c.length} نقاط مختارة: ` + parts.join(' + ') + (c.length > 6 ? ' + …' : '') + ' م';
   }
 
   function updateSummary() {
@@ -940,8 +945,7 @@
     document.getElementById('sSpecLabel').textContent = s.label;
     document.getElementById('sSpec').textContent = s.dist !== null ? fmtLen(s.dist) : '—';
     document.getElementById('sSpecSub').textContent =
-      s.dist === null ? 'حدّد إحداثيتين على الأقل' :
-      `${s.n} إحداثيات محددة` + (s.closed && s.area !== null ? ` — المساحة: ${fmtArea(s.area)}` : '');
+      s.dist === null ? 'حدّد نقطة واحدة على الأقل' : sumBreakdown();
     const pe = document.getElementById('sPct');
     pe.textContent = r.text;
     pe.classList.toggle('msg', !r.ok);
@@ -1094,14 +1098,14 @@
       const sp = specStats(), wk = walkedDist(), rt = ratio();
 
       const row = p => {
-        const d = p.pick ? fmtLen(distM(p, p.pick)) : '—';
+        const d = p.pick ? fmtLen(pairDist(p)) : '—';
         return `<tr><td><b>${p.name}</b></td><td dir="ltr">${ll(p)}</td><td dir="ltr" style="color:#e65100">${p.pick ? ll(p.pick) : '—'}</td><td><b>${d}</b></td><td>${accText(p)}</td><td>${p.time}</td></tr>`;
       };
       const head = `<thead><tr><th>النقطة</th><th>إحداثيات الصورة</th><th>الإحداثية المحددة</th><th>المسافة</th><th>الدقة (م)</th><th>الوقت</th></tr></thead>`;
 
       const sum = `<div class="sumrow">
           <div>إجمالي المسافة الممشاة<b>${wk > 0 ? fmtLen(wk) : '—'}</b>${track.length} نقطة GPS — مستبعدة: ${rejected}</div>
-          <div>${sp.label}<b>${sp.dist !== null ? fmtLen(sp.dist) : '—'}</b>${sp.closed && sp.area !== null ? 'المساحة: ' + fmtAreaFull(sp.area) : sp.n + ' إحداثيات محددة'}</div>
+          <div>${sp.label}<b>${sp.dist !== null ? fmtLen(sp.dist) : '—'}</b>${sp.dist !== null ? sumBreakdown() : 'لا توجد نقاط مختارة'}</div>
           <div class="p">نسبة المحدد من الممشى<b style="${rt.ok ? '' : 'font-size:11px;color:#a33'}">${rt.text}</b></div>
         </div>`;
 
@@ -1111,7 +1115,7 @@
       const firstRows = 10, nextRows = 34;
       pages.push(`
         <h2>تقرير إحداثيات النقاط</h2>
-        <div class="meta">عدد النقاط: ${points.length} — المحددة: ${n} — ${sp.dist === null ? '—' : (sp.closed ? 'شكل مغلق' : 'مسار مفتوح')} — حد دقة GPS: ${ACC_LIMIT} م<br>تاريخ التقرير: ${new Date().toLocaleString('ar-SA')}</div>
+        <div class="meta">عدد النقاط: ${points.length} — المحددة: ${n} — حد دقة GPS: ${ACC_LIMIT} م<br>تاريخ التقرير: ${new Date().toLocaleString('ar-SA')}</div>
         ${sum}
         <div class="shape">${mapImg ? `<img src="${mapImg}" style="width:100%;border-radius:6px;border:1px solid #ccd">` : ''}
           <div class="legend"><span style="background:#3b3bff"></span>إحداثيات الصور<span style="background:#ef6c00"></span>الإحداثيات المحددة<span style="background:#00e676"></span>مسار المشي</div>
@@ -1129,7 +1133,7 @@
               <img src="${p.img}">
               <b>${p.name}</b>
               <div class="c">${ll(p)}</div>
-              ${p.pick ? `<div class="o">${pickName(p)} ${ll(p.pick)} — ${fmtLen(distM(p, p.pick))}</div>` : ''}
+              ${p.pick ? `<div class="o">${pickName(p)} ${ll(p.pick)} — ${fmtLen(pairDist(p))}</div>` : ''}
               <div>${p.time}</div>
             </div>`).join('')}
           </div>`);

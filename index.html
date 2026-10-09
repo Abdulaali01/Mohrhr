@@ -20,7 +20,6 @@
   #undoBtn, #clearBtn { background: #e0e0e0; color: #333; }
   button:disabled { opacity: .5; cursor: not-allowed; }
 
-  /* أزرار الاختيار */
   .options { display: flex; gap: 14px; padding: 0 16px 6px; flex-wrap: wrap; align-items: center; font-size: 13px; }
   .seg { display: inline-flex; background: #e3e7ee; border-radius: 10px; padding: 3px; }
   .seg button { background: transparent; color: #444; padding: 7px 12px; font-size: 13px; border-radius: 8px; }
@@ -30,44 +29,75 @@
   header .seg button.on { background: #fff; color: #1f4e79; }
 
   #status { padding: 4px 16px; font-size: 13px; color: #555; min-height: 22px; }
-  #info { padding: 2px 16px 6px; font-size: 14px; font-weight: bold; color: #1f4e79; }
+
+  /* ملخص المساحات */
+  #summary { display: none; margin: 4px 16px 8px; gap: 8px; flex-wrap: wrap; }
+  #summary.show { display: flex; }
+  .stat { background: #fff; border: 1px solid #d5dbe5; border-radius: 10px; padding: 8px 12px; flex: 1; min-width: 130px; }
+  .stat small { display: block; color: #667; font-size: 12px; }
+  .stat b { font-size: 16px; color: #1f4e79; }
+  .stat.pct b { color: #e65100; font-size: 20px; }
+
+  /* شريط التحديد على الخريطة */
+  #pickBar { display: none; margin: 0 16px 8px; background: #fff3e0; border: 2px solid #ef6c00; color: #8a3b00;
+    border-radius: 10px; padding: 10px 12px; font-weight: bold; font-size: 14px; align-items: center; gap: 10px; justify-content: space-between; }
+  #pickBar.show { display: flex; }
+  #pickBar button { background: #ef6c00; color: #fff; padding: 8px 14px; font-size: 13px; }
+  body.picking #map { cursor: crosshair; outline: 3px solid #ef6c00; }
 
   #map { border-radius: 12px; border: 1px solid #ccd; }
-  table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
-  th, td { border: 1px solid #ccd; padding: 6px; text-align: center; }
+  table { width: 100%; border-collapse: collapse; background: #fff; font-size: 12.5px; }
+  th, td { border: 1px solid #ccd; padding: 6px 4px; text-align: center; }
   th { background: #1f4e79; color: #fff; position: sticky; top: 0; z-index: 1; }
-  td img { width: 60px; height: 45px; object-fit: cover; border-radius: 4px; }
+  td img { width: 56px; height: 42px; object-fit: cover; border-radius: 4px; }
+  td .ll { direction: ltr; font-family: Arial; white-space: nowrap; font-size: 12px; }
+  td .pk { color: #e65100; }
+  td .mini { padding: 5px 8px; font-size: 12px; border-radius: 7px; margin: 2px; }
+  .btn-pick { background: #ef6c00; color: #fff; }
+  .btn-del { background: #eee; color: #a00; }
+  .dist { font-weight: bold; color: #e65100; }
   tbody tr { cursor: pointer; }
   tbody tr:hover { background: #eef3fa; }
+  tfoot td { background: #fff8f0; font-weight: bold; }
 
-  /* عرض الجوال: الخريطة فوق والجدول تحت */
   body.mobile .layout { padding: 0 16px 30px; }
   body.mobile #map { height: 60vh; }
-  body.mobile .side { margin-top: 10px; }
+  body.mobile .side { margin-top: 10px; overflow-x: auto; }
 
-  /* عرض الويب: الخريطة يمين والجدول بجانبها */
-  body.web .layout { display: grid; grid-template-columns: 1fr 460px; gap: 14px; padding: 0 16px 16px; height: calc(100vh - 175px); min-height: 450px; }
+  body.web .layout { display: grid; grid-template-columns: 1fr 560px; gap: 14px; padding: 0 16px 16px; height: calc(100vh - 230px); min-height: 450px; }
   body.web #map { height: 100%; }
   body.web .side { overflow: auto; border: 1px solid #ccd; border-radius: 12px; background: #fff; }
-  body.web .bar { max-width: 900px; }
 
   .letter-icon { background: #fff; color: #000; border: 3px solid #000; border-radius: 50%;
     width: 34px; height: 34px; line-height: 28px; text-align: center; font-weight: bold; font-size: 15px;
     box-shadow: 0 1px 5px rgba(0,0,0,.5); font-family: Arial; }
+  .pick-icon { background: #ef6c00; color: #fff; border: 2px solid #fff; border-radius: 7px;
+    width: 34px; height: 26px; line-height: 22px; text-align: center; font-weight: bold; font-size: 13px;
+    box-shadow: 0 1px 5px rgba(0,0,0,.5); font-family: Arial; }
+  .dist-tip { background: #ef6c00; color: #fff; border: 0; font-weight: bold; font-family: Arial; padding: 2px 6px; }
+  .dist-tip::before { display: none; }
   .popup-box { text-align: center; direction: rtl; font-family: Tahoma, Arial; }
   .popup-box img { width: 180px; height: 135px; object-fit: cover; border-radius: 6px; display: block; margin-bottom: 6px; }
+  .popup-box button { margin-top: 6px; padding: 6px 10px; font-size: 12px; background: #ef6c00; color: #fff; }
 
   #report { position: absolute; left: -9999px; top: 0; width: 794px; background: #fff; padding: 30px; direction: rtl; font-family: Tahoma, Arial; }
   #report h2 { text-align: center; color: #1f4e79; margin: 0 0 6px; }
-  #report .meta { text-align: center; font-size: 12px; color: #555; margin-bottom: 12px; }
-  #report table { width: 100%; margin: 0; font-size: 13px; }
+  #report .meta { text-align: center; font-size: 12px; color: #555; margin-bottom: 10px; }
+  #report .sumrow { display: flex; gap: 8px; margin-bottom: 10px; }
+  #report .sumrow div { flex: 1; border: 1px solid #ccd; border-radius: 6px; padding: 6px; text-align: center; font-size: 12px; }
+  #report .sumrow b { display: block; font-size: 15px; color: #1f4e79; }
+  #report .sumrow .p b { color: #e65100; }
+  #report table { width: 100%; margin: 0; font-size: 12px; }
   #report th { position: static; }
-  #report .shape { text-align: center; margin: 10px 0 16px; }
+  #report .shape { text-align: center; margin: 6px 0 12px; }
+  #report .legend { font-size: 11px; color: #444; text-align: center; margin-top: 4px; }
+  #report .legend span { display: inline-block; width: 18px; height: 6px; vertical-align: middle; margin: 0 4px 0 10px; }
   #report .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  #report .card { border: 1px solid #ccd; border-radius: 6px; padding: 5px; text-align: center; font-size: 11px; height: 196px; }
-  #report .card img { width: 100%; height: 128px; object-fit: cover; border-radius: 4px; display: block; }
+  #report .card { border: 1px solid #ccd; border-radius: 6px; padding: 5px; text-align: center; font-size: 10.5px; height: 196px; overflow: hidden; }
+  #report .card img { width: 100%; height: 118px; object-fit: cover; border-radius: 4px; display: block; }
   #report .card b { font-size: 14px; color: #1f4e79; font-family: Arial; }
   #report .card .c { direction: ltr; font-family: Arial; }
+  #report .card .o { direction: ltr; font-family: Arial; color: #e65100; }
 </style>
 </head>
 <body>
@@ -93,19 +123,31 @@
     <button data-s="closed">⬠ شكل مغلق (أرض)</button>
     <button data-s="open">〰 مسار مفتوح (طريق)</button>
   </span>
+  <label><input type="checkbox" id="autoPick" checked> حدّد إحداثية ثانية بعد كل صورة</label>
 </div>
 
 <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
 
 <div id="status">اضغط "التقاط صورة" عند كل نقطة — النقاط تُحفظ تلقائياً.</div>
-<div id="info"></div>
+
+<div id="summary">
+  <div class="stat"><small>المساحة الإجمالية (إحداثيات الصور)</small><b id="sTotal">—</b></div>
+  <div class="stat"><small>المساحة المحددة</small><b id="sPicked">—</b></div>
+  <div class="stat pct"><small>النسبة المئوية</small><b id="sPct">—</b></div>
+</div>
+
+<div id="pickBar">
+  <span id="pickText"></span>
+  <button id="pickCancel">تخطي</button>
+</div>
 
 <div class="layout">
   <div id="map"></div>
   <div class="side">
     <table id="pointsTable">
-      <thead><tr><th>النقطة</th><th>الصورة</th><th>خط العرض</th><th>خط الطول</th><th>الدقة (م)</th><th>الوقت</th></tr></thead>
+      <thead><tr><th>النقطة</th><th>الصورة</th><th>إحداثيات الصورة</th><th>الإحداثية المحددة</th><th>المسافة بينهما</th><th>الوقت</th></tr></thead>
       <tbody></tbody>
+      <tfoot></tfoot>
     </table>
   </div>
 </div>
@@ -114,22 +156,26 @@
 
 <script>
   let points = [];
-  let markers = [];
+  let photoMarkers = [];
+  let pickTarget = null;
   const statusEl = document.getElementById('status');
-  const infoEl = document.getElementById('info');
   const pdfBtn = document.getElementById('pdfBtn');
   const undoBtn = document.getElementById('undoBtn');
   const cameraInput = document.getElementById('cameraInput');
+  const autoPick = document.getElementById('autoPick');
   const letter = i => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+  const pickName = p => p.name + "'";
 
-  // ===== الإعدادات (تُحفظ في المتصفح) =====
+  // ===== الإعدادات =====
   function getSetting(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
   function setSetting(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   let viewMode = getSetting('pm_view', window.innerWidth >= 900 ? 'web' : 'mobile');
   let shapeMode = getSetting('pm_shape', 'closed');
+  autoPick.checked = getSetting('pm_autopick', '1') === '1';
+  autoPick.onchange = () => setSetting('pm_autopick', autoPick.checked ? '1' : '0');
   const isClosed = () => shapeMode === 'closed';
 
-  // ===== الحفظ التلقائي (IndexedDB يتسع للصور) =====
+  // ===== الحفظ التلقائي =====
   const DB = {
     open() {
       return new Promise((res, rej) => {
@@ -166,6 +212,42 @@
     if (!ok) statusEl.textContent = '⚠️ تعذّر الحفظ التلقائي في هذا المتصفح — لا تغلق الصفحة قبل التصدير.';
   }
 
+  // ===== الحسابات =====
+  function distM(a, b) {
+    const R = 6371008.8, r = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  // مساحة ومحيط مجموعة إحداثيات
+  function polyStats(coords, closed) {
+    if (coords.length < 2) return { area: 0, perim: 0 };
+    const R = 6371008.8, lat0 = coords[0].lat * Math.PI / 180;
+    const xy = coords.map(p => [R * p.lng * Math.PI / 180 * Math.cos(lat0), R * p.lat * Math.PI / 180]);
+    let area = 0, perim = 0;
+    const cl = closed && xy.length >= 3;
+    for (let i = 0; i < xy.length; i++) {
+      const [x1, y1] = xy[i], [x2, y2] = xy[(i + 1) % xy.length];
+      area += x1 * y2 - x2 * y1;
+      if (i < xy.length - 1 || cl) perim += Math.hypot(x2 - x1, y2 - y1);
+    }
+    return { area: cl ? Math.abs(area) / 2 : 0, perim };
+  }
+  const photoCoords = () => points.map(p => ({ lat: p.lat, lng: p.lng }));
+  // المساحة المحددة: الإحداثية التي حددتها، وإن لم تحدد لنقطة تُستخدم إحداثية صورتها
+  const pickedCoords = () => points.map(p => p.pick ? p.pick : { lat: p.lat, lng: p.lng });
+  const pickedCount = () => points.filter(p => p.pick).length;
+  function areaStats() {
+    const t = polyStats(photoCoords(), isClosed());
+    const s = polyStats(pickedCoords(), isClosed());
+    const pct = t.area > 0 ? s.area / t.area * 100 : null;
+    return { total: t, picked: s, pct };
+  }
+  const fmtLen = m => m >= 1000 ? (m / 1000).toFixed(2) + ' كم' : m.toFixed(1) + ' م';
+  const fmtArea = a => a >= 10000 ? (a / 10000).toFixed(2) + ' هكتار' : a.toFixed(1) + ' م²';
+  const fmtAreaFull = a => a >= 10000 ? (a / 10000).toFixed(2) + ' هكتار (' + Math.round(a).toLocaleString('en') + ' م²)' : a.toFixed(1) + ' م²';
+  const ll = c => `${c.lat.toFixed(6)}, ${c.lng.toFixed(6)}`;
+
   // ===== الخريطة =====
   const map = L.map('map').setView([24.7136, 46.6753], 6);
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -174,8 +256,11 @@
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 20, maxNativeZoom: 19
   }).addTo(map);
-  const shape = L.polygon([], { color: '#3b3bff', weight: 7, fillColor: '#3b3bff', fillOpacity: 0.15 }).addTo(map);
-  const line = L.polyline([], { color: '#3b3bff', weight: 7 }).addTo(map);
+  const shape = L.polygon([], { color: '#3b3bff', weight: 6, fillColor: '#3b3bff', fillOpacity: 0.12 }).addTo(map);
+  const line = L.polyline([], { color: '#3b3bff', weight: 6 }).addTo(map);
+  const pickShape = L.polygon([], { color: '#ef6c00', weight: 4, dashArray: '10 8', fillColor: '#ef6c00', fillOpacity: 0.18 }).addTo(map);
+  const pickLine = L.polyline([], { color: '#ef6c00', weight: 4, dashArray: '10 8' }).addTo(map);
+  const layer = L.layerGroup().addTo(map);
 
   // ===== أزرار الاختيار =====
   function applyView() {
@@ -195,7 +280,7 @@
   });
 
   // ===== الالتقاط =====
-  document.getElementById('captureBtn').onclick = () => cameraInput.click();
+  document.getElementById('captureBtn').onclick = () => { stopPick(); cameraInput.click(); };
 
   cameraInput.onchange = async (e) => {
     const file = e.target.files[0];
@@ -215,68 +300,155 @@
     const p = {
       name: letter(points.length), img: imgData,
       lat: +c.latitude.toFixed(6), lng: +c.longitude.toFixed(6),
-      acc: Math.round(c.accuracy), time: new Date().toLocaleString('ar-SA')
+      acc: Math.round(c.accuracy), time: new Date().toLocaleString('ar-SA'), pick: null
     };
     points.push(p);
-    addMarker(p);
     if (points.length === 1) map.setView([p.lat, p.lng], 18);
     redraw(true);
     await persist();
     statusEl.textContent = `تم حفظ النقطة ${p.name} ✔ (دقة ±${p.acc} م)`;
+    if (autoPick.checked) startPick(points.length - 1);
   }
 
-  function addMarker(p) {
-    const icon = L.divIcon({ className: '', html: `<div class="letter-icon">${p.name}</div>`, iconSize: [34, 34], iconAnchor: [17, 17] });
-    const m = L.marker([p.lat, p.lng], { icon }).addTo(map).bindPopup(`
-      <div class="popup-box"><img src="${p.img}"><b>النقطة ${p.name}</b><br>${p.lat}, ${p.lng}<br><small>${p.time}</small></div>`, { maxWidth: 200 });
-    markers.push(m);
+  // ===== تحديد الإحداثية الثانية على الخريطة =====
+  function startPick(i) {
+    pickTarget = i;
+    map.closePopup();
+    document.body.classList.add('picking');
+    document.getElementById('pickText').textContent = `📍 اضغط على الخريطة لتحديد الإحداثية الثانية للنقطة ${points[i].name}`;
+    document.getElementById('pickBar').classList.add('show');
+    const p = points[i];
+    map.setView([p.lat, p.lng], Math.max(map.getZoom(), 18));
+  }
+  function stopPick() {
+    pickTarget = null;
+    document.body.classList.remove('picking');
+    document.getElementById('pickBar').classList.remove('show');
+  }
+  document.getElementById('pickCancel').onclick = stopPick;
+
+  map.on('click', async e => {
+    if (pickTarget === null) return;
+    const p = points[pickTarget];
+    p.pick = { lat: +e.latlng.lat.toFixed(6), lng: +e.latlng.lng.toFixed(6) };
+    stopPick();
+    redraw();
+    await persist();
+    statusEl.textContent = `تم تحديد ${pickName(p)} — تبعد ${fmtLen(distM(p, p.pick))} عن ${p.name} ✔`;
+  });
+
+  async function removePick(i) {
+    points[i].pick = null;
+    redraw(); await persist();
+    statusEl.textContent = `تم حذف الإحداثية المحددة للنقطة ${points[i].name}.`;
   }
 
+  // ===== الرسم =====
   function fitAll() {
-    const ll = points.map(p => [p.lat, p.lng]);
-    if (ll.length >= 2) map.fitBounds(L.latLngBounds(ll).pad(0.2));
-    else if (ll.length === 1) map.setView(ll[0], 18);
+    const all = [...photoCoords(), ...points.filter(p => p.pick).map(p => p.pick)].map(c => [c.lat, c.lng]);
+    if (all.length >= 2) map.fitBounds(L.latLngBounds(all).pad(0.2));
+    else if (all.length === 1) map.setView(all[0], 18);
   }
 
   function redraw(fit) {
-    const ll = points.map(p => [p.lat, p.lng]);
-    if (isClosed() && ll.length >= 3) { shape.setLatLngs(ll); line.setLatLngs([]); }
-    else { shape.setLatLngs([]); line.setLatLngs(ll); }
+    const pc = photoCoords().map(c => [c.lat, c.lng]);
+    if (isClosed() && pc.length >= 3) { shape.setLatLngs(pc); line.setLatLngs([]); }
+    else { shape.setLatLngs([]); line.setLatLngs(pc); }
+
+    const hasPick = pickedCount() > 0;
+    const kc = pickedCoords().map(c => [c.lat, c.lng]);
+    if (hasPick && isClosed() && kc.length >= 3) { pickShape.setLatLngs(kc); pickLine.setLatLngs([]); }
+    else if (hasPick) { pickShape.setLatLngs([]); pickLine.setLatLngs(kc); }
+    else { pickShape.setLatLngs([]); pickLine.setLatLngs([]); }
+
+    // العلامات
+    layer.clearLayers();
+    photoMarkers = [];
+    points.forEach((p, i) => {
+      const icon = L.divIcon({ className: '', html: `<div class="letter-icon">${p.name}</div>`, iconSize: [34, 34], iconAnchor: [17, 17] });
+      const m = L.marker([p.lat, p.lng], { icon }).addTo(layer);
+      const box = document.createElement('div');
+      box.className = 'popup-box';
+      box.innerHTML = `<img src="${p.img}"><b>النقطة ${p.name}</b><br><span dir="ltr">${ll(p)}</span><br><small>${p.time}</small>
+        ${p.pick ? `<br><small style="color:#e65100">${pickName(p)}: <span dir="ltr">${ll(p.pick)}</span> — ${fmtLen(distM(p, p.pick))}</small>` : ''}<br>`;
+      const btn = document.createElement('button');
+      btn.textContent = p.pick ? '📍 تغيير الإحداثية الثانية' : '📍 تحديد إحداثية ثانية';
+      btn.onclick = () => startPick(i);
+      box.appendChild(btn);
+      m.bindPopup(box, { maxWidth: 210 });
+      photoMarkers.push(m);
+
+      if (p.pick) {
+        const picon = L.divIcon({ className: '', html: `<div class="pick-icon">${pickName(p)}</div>`, iconSize: [34, 26], iconAnchor: [17, 13] });
+        const pm = L.marker([p.pick.lat, p.pick.lng], { icon: picon, draggable: true }).addTo(layer);
+        pm.bindTooltip('اسحب لتعديل الموقع', { direction: 'top' });
+        pm.on('dragend', async ev => {
+          const q = ev.target.getLatLng();
+          p.pick = { lat: +q.lat.toFixed(6), lng: +q.lng.toFixed(6) };
+          redraw(); await persist();
+        });
+        L.polyline([[p.lat, p.lng], [p.pick.lat, p.pick.lng]], { color: '#fff', weight: 2, dashArray: '4 5' })
+          .addTo(layer)
+          .bindTooltip(fmtLen(distM(p, p.pick)), { permanent: true, direction: 'center', className: 'dist-tip' });
+      }
+    });
+
     if (fit) fitAll();
 
+    // الجدول
     const tbody = document.querySelector('#pointsTable tbody');
     tbody.innerHTML = '';
+    let sumD = 0;
     points.forEach((p, i) => {
+      const d = p.pick ? distM(p, p.pick) : null;
+      if (d !== null) sumD += d;
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td><b>${p.name}</b></td><td><img src="${p.img}"></td><td>${p.lat}</td><td>${p.lng}</td><td>${p.acc}</td><td>${p.time}</td>`;
-      tr.onclick = () => { map.setView([p.lat, p.lng], 19); markers[i].openPopup(); };
+      tr.innerHTML = `
+        <td><b>${p.name}</b></td>
+        <td><img src="${p.img}"></td>
+        <td><span class="ll">${ll(p)}</span></td>
+        <td>${p.pick ? `<span class="ll pk">${ll(p.pick)}</span><br>` : ''}</td>
+        <td>${d !== null ? `<span class="dist">${fmtLen(d)}</span>` : '—'}</td>
+        <td><small>${p.time}</small></td>`;
+      const cell = tr.children[3];
+      const b1 = document.createElement('button');
+      b1.className = 'mini btn-pick';
+      b1.textContent = p.pick ? '📍 تغيير' : '📍 تحديد';
+      b1.onclick = ev => { ev.stopPropagation(); startPick(i); };
+      cell.appendChild(b1);
+      if (p.pick) {
+        const b2 = document.createElement('button');
+        b2.className = 'mini btn-del'; b2.textContent = '✖';
+        b2.onclick = ev => { ev.stopPropagation(); removePick(i); };
+        cell.appendChild(b2);
+      }
+      tr.onclick = () => { map.setView([p.lat, p.lng], 19); photoMarkers[i].openPopup(); };
       tbody.appendChild(tr);
     });
 
+    const n = pickedCount();
+    document.querySelector('#pointsTable tfoot').innerHTML = n ? `
+      <tr><td colspan="4">عدد الإحداثيات المحددة: ${n} من ${points.length}</td>
+      <td colspan="2">متوسط المسافة: ${fmtLen(sumD / n)}</td></tr>` : '';
+
     pdfBtn.disabled = undoBtn.disabled = points.length === 0;
-    infoEl.textContent = points.length ? `عدد النقاط: ${points.length} — ${summaryText()}` : '';
+    updateSummary();
   }
 
-  // ===== المساحة والطول =====
-  function stats() {
-    if (points.length < 2) return { area: 0, perim: 0, xy: null };
-    const R = 6371008.8, lat0 = points[0].lat * Math.PI / 180;
-    const xy = points.map(p => [R * p.lng * Math.PI / 180 * Math.cos(lat0), R * p.lat * Math.PI / 180]);
-    let area = 0, perim = 0;
-    const closed = isClosed() && xy.length >= 3;
-    for (let i = 0; i < xy.length; i++) {
-      const [x1, y1] = xy[i], [x2, y2] = xy[(i + 1) % xy.length];
-      area += x1 * y2 - x2 * y1;
-      if (i < xy.length - 1 || closed) perim += Math.hypot(x2 - x1, y2 - y1);
+  function updateSummary() {
+    const box = document.getElementById('summary');
+    if (points.length < 2) { box.classList.remove('show'); return; }
+    box.classList.add('show');
+    const a = areaStats();
+    if (isClosed() && points.length >= 3) {
+      document.getElementById('sTotal').textContent = fmtArea(a.total.area);
+      document.getElementById('sPicked').textContent = pickedCount() ? fmtArea(a.picked.area) : '—';
+      document.getElementById('sPct').textContent = pickedCount() && a.pct !== null ? a.pct.toFixed(1) + '%' : '—';
+    } else {
+      document.getElementById('sTotal').textContent = 'طول: ' + fmtLen(a.total.perim);
+      document.getElementById('sPicked').textContent = pickedCount() ? 'طول: ' + fmtLen(a.picked.perim) : '—';
+      document.getElementById('sPct').textContent = pickedCount() && a.total.perim > 0 ? (a.picked.perim / a.total.perim * 100).toFixed(1) + '%' : '—';
     }
-    return { area: closed ? Math.abs(area) / 2 : 0, perim, xy, closed };
-  }
-  const fmtLen = m => m >= 1000 ? (m / 1000).toFixed(2) + ' كم' : m.toFixed(1) + ' م';
-  const fmtArea = a => a >= 10000 ? (a / 10000).toFixed(2) + ' هكتار (' + Math.round(a).toLocaleString('en') + ' م²)' : a.toFixed(1) + ' م²';
-  function summaryText() {
-    const s = stats();
-    if (points.length < 2) return '';
-    return s.closed ? `المساحة: ${fmtArea(s.area)} — المحيط: ${fmtLen(s.perim)}` : `طول المسار: ${fmtLen(s.perim)}`;
   }
 
   function resizeImage(file, maxSize) {
@@ -313,19 +485,26 @@
     const s = 256 * Math.pow(2, z), r = lat * Math.PI / 180;
     return [(lng + 180) / 360 * s, (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * s];
   }
+  function drawPath(ctx, pts, closed) {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    if (closed && pts.length >= 3) ctx.closePath();
+  }
   async function mapImage() {
     const W = 1400, H = 900;
+    const all = [...photoCoords(), ...points.filter(p => p.pick).map(p => p.pick)];
     let z = 19;
     for (; z > 2; z--) {
-      const xy = points.map(p => project(p.lat, p.lng, z));
+      const xy = all.map(p => project(p.lat, p.lng, z));
       const w = Math.max(...xy.map(a => a[0])) - Math.min(...xy.map(a => a[0]));
       const h = Math.max(...xy.map(a => a[1])) - Math.min(...xy.map(a => a[1]));
       if (w * 1.3 <= W && h * 1.3 <= H) break;
     }
-    const xy = points.map(p => project(p.lat, p.lng, z));
-    const cx = (Math.max(...xy.map(a => a[0])) + Math.min(...xy.map(a => a[0]))) / 2;
-    const cy = (Math.max(...xy.map(a => a[1])) + Math.min(...xy.map(a => a[1]))) / 2;
+    const axy = all.map(p => project(p.lat, p.lng, z));
+    const cx = (Math.max(...axy.map(a => a[0])) + Math.min(...axy.map(a => a[0]))) / 2;
+    const cy = (Math.max(...axy.map(a => a[1])) + Math.min(...axy.map(a => a[1]))) / 2;
     const ox = cx - W / 2, oy = cy - H / 2;
+    const toPx = c => { const [x, y] = project(c.lat, c.lng, z); return [x - ox, y - oy]; };
 
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
@@ -342,18 +521,47 @@
       if (b) ctx.drawImage(b, tx * 256 - ox, ty * 256 - oy);
     }
 
-    const pts = xy.map(([x, y]) => [x - ox, y - oy]);
-    ctx.beginPath();
-    pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-    if (isClosed() && pts.length >= 3) { ctx.closePath(); ctx.fillStyle = 'rgba(59,59,255,.18)'; ctx.fill(); }
-    ctx.strokeStyle = '#3b3bff'; ctx.lineWidth = 8; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
+    const closed = isClosed();
+    const pp = points.map(p => toPx(p));
+    // الشكل الأزرق (الصور)
+    drawPath(ctx, pp, closed);
+    if (closed && pp.length >= 3) { ctx.fillStyle = 'rgba(59,59,255,.15)'; ctx.fill(); }
+    ctx.setLineDash([]); ctx.strokeStyle = '#3b3bff'; ctx.lineWidth = 7; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
 
-    // حجم الدوائر يصغر تلقائياً إذا كانت النقاط متقاربة
+    // الشكل البرتقالي (المحدد)
+    if (pickedCount()) {
+      const kp = pickedCoords().map(toPx);
+      drawPath(ctx, kp, closed);
+      if (closed && kp.length >= 3) { ctx.fillStyle = 'rgba(239,108,0,.2)'; ctx.fill(); }
+      ctx.setLineDash([16, 10]); ctx.strokeStyle = '#ef6c00'; ctx.lineWidth = 5; ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // خطوط الربط بين النقطة وإحداثيتها
+    points.forEach((p, i) => {
+      if (!p.pick) return;
+      const [x2, y2] = toPx(p.pick);
+      ctx.beginPath(); ctx.moveTo(pp[i][0], pp[i][1]); ctx.lineTo(x2, y2);
+      ctx.setLineDash([6, 6]); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]);
+    });
+
     let minD = Infinity;
-    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++)
-      minD = Math.min(minD, Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]));
+    for (let i = 0; i < pp.length; i++) for (let j = i + 1; j < pp.length; j++)
+      minD = Math.min(minD, Math.hypot(pp[i][0] - pp[j][0], pp[i][1] - pp[j][1]));
     const rad = Math.max(12, Math.min(22, minD / 2 - 1));
-    pts.forEach(([x, y], i) => {
+
+    // علامات المحدد
+    points.forEach(p => {
+      if (!p.pick) return;
+      const [x, y] = toPx(p.pick);
+      const w = rad * 2.2, h = rad * 1.6;
+      ctx.fillStyle = '#ef6c00'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.rect(x - w / 2, y - h / 2, w, h); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(rad * 0.8)}px Arial`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(pickName(p), x, y + 1);
+    });
+    // علامات الصور
+    pp.forEach(([x, y], i) => {
       ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2);
       ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.stroke();
       const name = points[i].name;
@@ -370,26 +578,9 @@
     catch (e) { return null; }
   }
 
-  // رسم بديل إذا تعذّر تحميل الخريطة
-  function shapeSVG() {
-    const { xy } = stats();
-    if (!xy) return '';
-    const W = 500, H = 300, pad = 30;
-    const xs = xy.map(a => a[0]), ys = xy.map(a => a[1]);
-    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-    const k = Math.min((W - 2 * pad) / (maxX - minX || 1), (H - 2 * pad) / (maxY - minY || 1));
-    const pts = xy.map(([x, y]) => [pad + (x - minX) * k, H - pad - (y - minY) * k]);
-    const poly = pts.map(p => p.join(',')).join(' ');
-    const closed = isClosed() && xy.length >= 3;
-    return `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-      <${closed ? 'polygon' : 'polyline'} points="${poly}" fill="${closed ? 'rgba(59,59,255,.15)' : 'none'}" stroke="#3b3bff" stroke-width="4"/>
-      ${pts.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="13" fill="#fff" stroke="#000" stroke-width="2.5"/>
-        <text x="${p[0]}" y="${p[1] + 5}" text-anchor="middle" font-size="12" font-weight="bold" font-family="Arial">${points[i].name}</text>`).join('')}
-    </svg>`;
-  }
-
   // ===== تصدير PDF =====
   pdfBtn.onclick = async () => {
+    stopPick();
     pdfBtn.disabled = true;
     try {
       const { jsPDF } = window.jspdf;
@@ -397,20 +588,45 @@
       const pageW = 210, pageH = 297, margin = 10;
       const report = document.getElementById('report');
       const pages = [];
+      const a = areaStats();
+      const n = pickedCount();
+      const closedOK = isClosed() && points.length >= 3;
 
-      const tableRows = p => `<tr><td><b>${p.name}</b></td><td>${p.lat}</td><td>${p.lng}</td><td>${p.acc}</td><td>${p.time}</td></tr>`;
-      const tableHead = `<thead><tr><th>النقطة</th><th>خط العرض (Lat)</th><th>خط الطول (Lng)</th><th>الدقة (م)</th><th>الوقت</th></tr></thead>`;
-      const firstRows = 12, nextRows = 35;
+      const row = p => {
+        const d = p.pick ? fmtLen(distM(p, p.pick)) : '—';
+        return `<tr><td><b>${p.name}</b></td><td dir="ltr">${ll(p)}</td><td dir="ltr" style="color:#e65100">${p.pick ? ll(p.pick) : '—'}</td><td><b>${d}</b></td><td>${p.acc}</td><td>${p.time}</td></tr>`;
+      };
+      const head = `<thead><tr><th>النقطة</th><th>إحداثيات الصورة</th><th>الإحداثية المحددة</th><th>المسافة</th><th>الدقة (م)</th><th>الوقت</th></tr></thead>`;
+
+      let sum = '';
+      if (closedOK) {
+        sum = `<div class="sumrow">
+          <div>المساحة الإجمالية (الصور)<b>${fmtAreaFull(a.total.area)}</b></div>
+          <div>المساحة المحددة<b>${n ? fmtAreaFull(a.picked.area) : '—'}</b></div>
+          <div class="p">النسبة المئوية<b>${n && a.pct !== null ? a.pct.toFixed(1) + '%' : '—'}</b></div>
+        </div>`;
+      } else if (points.length >= 2) {
+        sum = `<div class="sumrow">
+          <div>طول المسار (الصور)<b>${fmtLen(a.total.perim)}</b></div>
+          <div>طول المسار المحدد<b>${n ? fmtLen(a.picked.perim) : '—'}</b></div>
+          <div class="p">النسبة المئوية<b>${n && a.total.perim > 0 ? (a.picked.perim / a.total.perim * 100).toFixed(1) + '%' : '—'}</b></div>
+        </div>`;
+      }
+
       statusEl.textContent = 'جاري تحميل صورة الخريطة...';
       const mapImg = await mapImage();
       statusEl.textContent = 'جاري إنشاء ملف PDF...';
+      const firstRows = 10, nextRows = 34;
       pages.push(`
-        <h2>جدول إحداثيات النقاط</h2>
-        <div class="meta">عدد النقاط: ${points.length} — ${isClosed() ? 'شكل مغلق' : 'مسار مفتوح'}${points.length >= 2 ? ' — ' + summaryText() : ''}<br>تاريخ التقرير: ${new Date().toLocaleString('ar-SA')}</div>
-        <div class="shape">${mapImg ? `<img src="${mapImg}" style="width:100%;border-radius:6px;border:1px solid #ccd">` : shapeSVG()}</div>
-        <table>${tableHead}<tbody>${points.slice(0, firstRows).map(tableRows).join('')}</tbody></table>`);
+        <h2>تقرير إحداثيات النقاط</h2>
+        <div class="meta">عدد النقاط: ${points.length} — المحددة: ${n} — ${isClosed() ? 'شكل مغلق' : 'مسار مفتوح'}<br>تاريخ التقرير: ${new Date().toLocaleString('ar-SA')}</div>
+        ${sum}
+        <div class="shape">${mapImg ? `<img src="${mapImg}" style="width:100%;border-radius:6px;border:1px solid #ccd">` : ''}
+          <div class="legend"><span style="background:#3b3bff"></span>إحداثيات الصور<span style="background:#ef6c00"></span>الإحداثيات المحددة</div>
+        </div>
+        <table>${head}<tbody>${points.slice(0, firstRows).map(row).join('')}</tbody></table>`);
       for (let i = firstRows; i < points.length; i += nextRows)
-        pages.push(`<table>${tableHead}<tbody>${points.slice(i, i + nextRows).map(tableRows).join('')}</tbody></table>`);
+        pages.push(`<table>${head}<tbody>${points.slice(i, i + nextRows).map(row).join('')}</tbody></table>`);
 
       const perPage = 20, totalPhotoPages = Math.ceil(points.length / perPage);
       for (let i = 0; i < points.length; i += perPage) {
@@ -420,7 +636,8 @@
             <div class="card">
               <img src="${p.img}">
               <b>${p.name}</b>
-              <div class="c">${p.lat}, ${p.lng}</div>
+              <div class="c">${ll(p)}</div>
+              ${p.pick ? `<div class="o">${pickName(p)} ${ll(p.pick)} — ${fmtLen(distM(p, p.pick))}</div>` : ''}
               <div>${p.time}</div>
             </div>`).join('')}
           </div>`);
@@ -447,26 +664,28 @@
   // ===== تراجع ومسح =====
   undoBtn.onclick = async () => {
     if (!points.length) return;
-    points.pop(); map.removeLayer(markers.pop());
+    stopPick();
+    const last = points[points.length - 1];
+    if (last.pick) last.pick = null; else points.pop();
     redraw(); await persist();
-    statusEl.textContent = 'تم حذف آخر نقطة.';
+    statusEl.textContent = 'تم التراجع عن آخر خطوة.';
   };
 
   document.getElementById('clearBtn').onclick = async () => {
     if (!points.length || !confirm('مسح جميع النقاط والصور نهائياً؟')) return;
-    points = []; markers.forEach(m => map.removeLayer(m)); markers = [];
+    stopPick();
+    points = [];
     redraw(); await persist();
     statusEl.textContent = 'تم المسح.';
   };
 
-  // ===== البدء: استرجاع النقاط المحفوظة =====
+  // ===== البدء =====
   applyView();
   applyShape();
   (async () => {
     const saved = await DB.load();
     if (saved.length) {
-      points = saved;
-      points.forEach(addMarker);
+      points = saved.map(p => ({ pick: null, ...p }));
       redraw(true);
       statusEl.textContent = `تم استرجاع ${points.length} نقطة محفوظة ✔`;
     }

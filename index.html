@@ -37,6 +37,11 @@
   .stat small { display: block; color: #667; font-size: 12px; }
   .stat b { font-size: 16px; color: #1f4e79; }
   .stat.pct b { color: #e65100; font-size: 20px; }
+  .stat.pct b.msg { font-size: 13px; color: #a33; }
+  .stat em { display: block; font-style: normal; font-size: 11px; color: #667; margin-top: 2px; }
+  .track-btn { background: #00897b; color: #fff; padding: 9px 14px; font-size: 14px; }
+  .track-btn.on { background: #c62828; }
+  .track-info { font-size: 12px; color: #455; }
 
   /* شريط التحديد على الخريطة */
   #pickBar { display: none; margin: 0 16px 8px; background: #fff3e0; border: 2px solid #ef6c00; color: #8a3b00;
@@ -134,10 +139,15 @@
 
 <div id="status">اضغط "التقاط صورة" عند كل نقطة — النقاط تُحفظ تلقائياً.</div>
 
+<div class="options">
+  <button id="trackBtn" class="track-btn">🚶 بدء تتبع المشي</button>
+  <span id="trackInfo" class="track-info"></span>
+</div>
+
 <div id="summary">
-  <div class="stat"><small>المساحة الإجمالية (إحداثيات الصور)</small><b id="sTotal">—</b></div>
-  <div class="stat"><small>المساحة المحددة</small><b id="sPicked">—</b></div>
-  <div class="stat pct"><small>النسبة المئوية</small><b id="sPct">—</b></div>
+  <div class="stat"><small>إجمالي المسافة الممشاة</small><b id="sWalk">—</b><em id="sWalkSub"></em></div>
+  <div class="stat"><small id="sSpecLabel">إجمالي المسافة المحددة</small><b id="sSpec">—</b><em id="sSpecSub"></em></div>
+  <div class="stat pct"><small>نسبة المسافة المحددة من الممشاة</small><b id="sPct">—</b></div>
 </div>
 
 <div id="pickBar">
@@ -170,6 +180,14 @@
   const letter = i => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
   const pickName = p => p.name + "'";
 
+  // ===== إعدادات تتبع المشي =====
+  const ACC_LIMIT = 25;   // حد الدقة بالمتر: أي نقطة GPS دقتها أسوأ من هذا تُستبعد من المسافة الممشاة
+  const MIN_STEP = 5;     // لا تُسجَّل نقطة جديدة إلا إذا تحرك المستخدم 5 م على الأقل (يمنع تذبذب GPS أثناء الوقوف)
+  let track = [];         // نقاط المسار المقبولة بالترتيب
+  let rejected = 0;       // عدد النقاط المستبعدة لضعف الدقة
+  let watchId = null;
+  let wakeLock = null;
+
   // ===== الإعدادات =====
   function getSetting(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
   function setSetting(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -189,28 +207,29 @@
         r.onerror = () => rej(r.error);
       });
     },
-    async save(val) {
+    async save(val, key = 'points') {
       try {
         const db = await this.open();
         await new Promise((res, rej) => {
           const tx = db.transaction('data', 'readwrite');
-          tx.objectStore('data').put(val, 'points');
+          tx.objectStore('data').put(val, key);
           tx.oncomplete = res; tx.onerror = () => rej(tx.error);
         });
         return true;
       } catch (e) { return false; }
     },
-    async load() {
+    async load(key = 'points', def = []) {
       try {
         const db = await this.open();
         return await new Promise(res => {
-          const r = db.transaction('data').objectStore('data').get('points');
-          r.onsuccess = () => res(r.result || []);
-          r.onerror = () => res([]);
+          const r = db.transaction('data').objectStore('data').get(key);
+          r.onsuccess = () => res(r.result || def);
+          r.onerror = () => res(def);
         });
-      } catch (e) { return []; }
+      } catch (e) { return def; }
     }
   };
+  const persistTrack = () => DB.save({ track, rejected }, 'track');
   async function persist() {
     const ok = await DB.save(points);
     if (!ok) statusEl.textContent = '⚠️ تعذّر الحفظ التلقائي في هذا المتصفح — لا تغلق الصفحة قبل التصدير.';
@@ -238,14 +257,42 @@
     return { area: cl ? Math.abs(area) / 2 : 0, perim };
   }
   const photoCoords = () => points.map(p => ({ lat: p.lat, lng: p.lng }));
-  // المساحة المحددة: الإحداثية التي حددتها، وإن لم تحدد لنقطة تُستخدم إحداثية صورتها
-  const pickedCoords = () => points.map(p => p.pick ? p.pick : { lat: p.lat, lng: p.lng });
+  // الإحداثيات المحددة يدوياً فقط، بالترتيب (إحداثيات الصور لا تدخل في حساب النسبة)
+  const pickedCoords = () => points.filter(p => p.pick).map(p => p.pick);
   const pickedCount = () => points.filter(p => p.pick).length;
-  function areaStats() {
-    const t = polyStats(photoCoords(), isClosed());
-    const s = polyStats(pickedCoords(), isClosed());
-    const pct = t.area > 0 ? s.area / t.area * 100 : null;
-    return { total: t, picked: s, pct };
+
+  // إجمالي المسافة المحددة (بالمتر)
+  function specStats() {
+    const k = pickedCoords(), n = k.length;
+    if (n < 2) return { n, dist: null, closed: false, label: 'إجمالي المسافة المحددة', area: null };
+    let d = 0;
+    for (let i = 0; i < n - 1; i++) d += distM(k[i], k[i + 1]);
+    const closed = n >= 3 && isClosed();          // نقطتان = مسار مفتوح دائماً
+    if (closed) d += distM(k[n - 1], k[0]);       // إغلاق الشكل: من آخر نقطة إلى أول نقطة
+    return {
+      n, dist: d, closed,
+      label: closed ? 'محيط الشكل (مغلق)' : 'إجمالي المسافة المحددة (مسار مفتوح)',
+      area: closed ? polyStats(k, true).area : null
+    };
+  }
+
+  // إجمالي المسافة الممشاة (بالمتر): مجموع المسافات بين كل نقطة مسار والتي تليها
+  function walkedDist() {
+    let d = 0;
+    for (let i = 0; i < track.length - 1; i++) d += distM(track[i], track[i + 1]);
+    return d;
+  }
+
+  // النسبة = (المسافة المحددة ÷ المسافة الممشاة) × 100 ، كلها بالمتر
+  const NO_WALK_MSG = 'لا يمكن حساب النسبة لعدم توفر مسافة ممشاة';
+  function ratio() {
+    const w = walkedDist(), s = specStats();
+    if (!(w > 0) || !isFinite(w)) return { ok: false, text: NO_WALK_MSG };
+    if (s.dist === null) return { ok: false, text: 'حدّد إحداثيتين على الأقل' };
+    const pct = s.dist / w * 100;
+    if (!isFinite(pct)) return { ok: false, text: NO_WALK_MSG };
+    const r = pct < 10 ? Math.round(pct * 100) / 100 : Math.round(pct * 10) / 10;
+    return { ok: true, pct, text: r + '%' };
   }
   const fmtLen = m => m >= 1000 ? (m / 1000).toFixed(2) + ' كم' : m.toFixed(1) + ' م';
   const fmtArea = a => a >= 10000 ? (a / 10000).toFixed(2) + ' هكتار' : a.toFixed(1) + ' م²';
@@ -264,7 +311,56 @@
   const line = L.polyline([], { color: '#3b3bff', weight: 6 }).addTo(map);
   const pickShape = L.polygon([], { color: '#ef6c00', weight: 4, dashArray: '10 8', fillColor: '#ef6c00', fillOpacity: 0.18 }).addTo(map);
   const pickLine = L.polyline([], { color: '#ef6c00', weight: 4, dashArray: '10 8' }).addTo(map);
+  const trackLine = L.polyline([], { color: '#00e676', weight: 3, opacity: 0.95 }).addTo(map);
   const layer = L.layerGroup().addTo(map);
+
+  // ===== تتبع المشي =====
+  const trackBtn = document.getElementById('trackBtn');
+  function updateTrackInfo() {
+    const w = walkedDist();
+    document.getElementById('trackInfo').textContent =
+      (watchId !== null ? '🟢 جاري التتبع — ' : '') +
+      `نقاط المسار: ${track.length} مقبولة، ${rejected} مستبعدة (دقة أسوأ من ${ACC_LIMIT} م)` +
+      (track.length > 1 ? ` — المسافة: ${fmtLen(w)}` : '');
+  }
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator && watchId !== null) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') keepAwake(); });
+
+  function onTrackPos(pos) {
+    const c = pos.coords;
+    if (!(c.accuracy <= ACC_LIMIT)) { rejected++; updateTrackInfo(); return; }   // استبعاد الدقة الضعيفة
+    const pt = { lat: +c.latitude.toFixed(6), lng: +c.longitude.toFixed(6), acc: Math.round(c.accuracy), t: Date.now() };
+    const last = track[track.length - 1];
+    if (last && distM(last, pt) < MIN_STEP) return;
+    track.push(pt);
+    trackLine.addLatLng([pt.lat, pt.lng]);
+    persistTrack();
+    updateTrackInfo();
+    updateSummary();
+  }
+  function startTrack() {
+    if (!navigator.geolocation) { statusEl.textContent = 'المتصفح لا يدعم تحديد الموقع.'; return; }
+    watchId = navigator.geolocation.watchPosition(onTrackPos,
+      err => { statusEl.textContent = 'تعذّر تتبع الموقع: ' + err.message; },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+    trackBtn.textContent = '⏹ إيقاف تتبع المشي';
+    trackBtn.classList.add('on');
+    keepAwake();
+    updateTrackInfo();
+    statusEl.textContent = 'بدأ تتبع المشي — أبقِ الصفحة مفتوحة أثناء المشي.';
+  }
+  function stopTrack() {
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+    try { if (wakeLock) wakeLock.release(); } catch (e) {}
+    wakeLock = null;
+    trackBtn.textContent = track.length ? '🚶 متابعة تتبع المشي' : '🚶 بدء تتبع المشي';
+    trackBtn.classList.remove('on');
+    updateTrackInfo();
+  }
+  trackBtn.onclick = () => watchId === null ? startTrack() : stopTrack();
 
   // ===== أزرار الاختيار =====
   function applyView() {
@@ -310,7 +406,8 @@
     if (points.length === 1) map.setView([p.lat, p.lng], 18);
     redraw(true);
     await persist();
-    statusEl.textContent = `تم حفظ النقطة ${p.name} ✔ (دقة ±${p.acc} م)`;
+    statusEl.textContent = `تم حفظ النقطة ${p.name} ✔ (دقة ±${p.acc} م)` +
+      (watchId === null ? ' — تنبيه: تتبع المشي متوقف، فلن تُحسب المسافة الممشاة.' : '');
     if (autoPick.checked) startPick(points.length - 1);
   }
 
@@ -349,7 +446,7 @@
 
   // ===== الرسم =====
   function fitAll() {
-    const all = [...photoCoords(), ...points.filter(p => p.pick).map(p => p.pick)].map(c => [c.lat, c.lng]);
+    const all = [...photoCoords(), ...pickedCoords(), ...track].map(c => [c.lat, c.lng]);
     if (all.length >= 2) map.fitBounds(L.latLngBounds(all).pad(0.2));
     else if (all.length === 1) map.setView(all[0], 18);
   }
@@ -431,9 +528,11 @@
     });
 
     const n = pickedCount();
+    const sp = specStats();
     document.querySelector('#pointsTable tfoot').innerHTML = n ? `
       <tr><td colspan="4">عدد الإحداثيات المحددة: ${n} من ${points.length}</td>
-      <td colspan="2">متوسط المسافة: ${fmtLen(sumD / n)}</td></tr>` : '';
+      <td colspan="2">متوسط المسافة: ${fmtLen(sumD / n)}</td></tr>
+      ${sp.dist !== null ? `<tr><td colspan="4">${sp.label}</td><td colspan="2">${fmtLen(sp.dist)}</td></tr>` : ''}` : '';
 
     pdfBtn.disabled = undoBtn.disabled = points.length === 0;
     updateSummary();
@@ -441,18 +540,19 @@
 
   function updateSummary() {
     const box = document.getElementById('summary');
-    if (points.length < 2) { box.classList.remove('show'); return; }
+    if (!points.length && !track.length) { box.classList.remove('show'); return; }
     box.classList.add('show');
-    const a = areaStats();
-    if (isClosed() && points.length >= 3) {
-      document.getElementById('sTotal').textContent = fmtArea(a.total.area);
-      document.getElementById('sPicked').textContent = pickedCount() ? fmtArea(a.picked.area) : '—';
-      document.getElementById('sPct').textContent = pickedCount() && a.pct !== null ? a.pct.toFixed(1) + '%' : '—';
-    } else {
-      document.getElementById('sTotal').textContent = 'طول: ' + fmtLen(a.total.perim);
-      document.getElementById('sPicked').textContent = pickedCount() ? 'طول: ' + fmtLen(a.picked.perim) : '—';
-      document.getElementById('sPct').textContent = pickedCount() && a.total.perim > 0 ? (a.picked.perim / a.total.perim * 100).toFixed(1) + '%' : '—';
-    }
+    const w = walkedDist(), s = specStats(), r = ratio();
+    document.getElementById('sWalk').textContent = w > 0 ? fmtLen(w) : '—';
+    document.getElementById('sWalkSub').textContent = `${track.length} نقطة GPS مقبولة، ${rejected} مستبعدة`;
+    document.getElementById('sSpecLabel').textContent = s.label;
+    document.getElementById('sSpec').textContent = s.dist !== null ? fmtLen(s.dist) : '—';
+    document.getElementById('sSpecSub').textContent =
+      s.dist === null ? 'حدّد إحداثيتين على الأقل' :
+      `${s.n} إحداثيات محددة` + (s.closed && s.area !== null ? ` — المساحة: ${fmtArea(s.area)}` : '');
+    const pe = document.getElementById('sPct');
+    pe.textContent = r.text;
+    pe.classList.toggle('msg', !r.ok);
   }
 
   function resizeImage(file, maxSize) {
@@ -496,7 +596,7 @@
   }
   async function mapImage() {
     const W = 1400, H = 900;
-    const all = [...photoCoords(), ...points.filter(p => p.pick).map(p => p.pick)];
+    const all = [...photoCoords(), ...pickedCoords(), ...track];
     let z = 19;
     for (; z > 2; z--) {
       const xy = all.map(p => project(p.lat, p.lng, z));
@@ -523,6 +623,12 @@
     for (const { tx, ty, a, b } of await Promise.all(jobs)) {
       if (a) ctx.drawImage(a, tx * 256 - ox, ty * 256 - oy);
       if (b) ctx.drawImage(b, tx * 256 - ox, ty * 256 - oy);
+    }
+
+    // مسار المشي (أخضر)
+    if (track.length >= 2) {
+      drawPath(ctx, track.map(toPx), false);
+      ctx.setLineDash([]); ctx.strokeStyle = '#00e676'; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.stroke();
     }
 
     const closed = isClosed();
@@ -592,9 +698,8 @@
       const pageW = 210, pageH = 297, margin = 10;
       const report = document.getElementById('report');
       const pages = [];
-      const a = areaStats();
       const n = pickedCount();
-      const closedOK = isClosed() && points.length >= 3;
+      const sp = specStats(), wk = walkedDist(), rt = ratio();
 
       const row = p => {
         const d = p.pick ? fmtLen(distM(p, p.pick)) : '—';
@@ -602,20 +707,11 @@
       };
       const head = `<thead><tr><th>النقطة</th><th>إحداثيات الصورة</th><th>الإحداثية المحددة</th><th>المسافة</th><th>الدقة (م)</th><th>الوقت</th></tr></thead>`;
 
-      let sum = '';
-      if (closedOK) {
-        sum = `<div class="sumrow">
-          <div>المساحة الإجمالية (الصور)<b>${fmtAreaFull(a.total.area)}</b></div>
-          <div>المساحة المحددة<b>${n ? fmtAreaFull(a.picked.area) : '—'}</b></div>
-          <div class="p">النسبة المئوية<b>${n && a.pct !== null ? a.pct.toFixed(1) + '%' : '—'}</b></div>
+      const sum = `<div class="sumrow">
+          <div>إجمالي المسافة الممشاة<b>${wk > 0 ? fmtLen(wk) : '—'}</b>${track.length} نقطة GPS — مستبعدة: ${rejected}</div>
+          <div>${sp.label}<b>${sp.dist !== null ? fmtLen(sp.dist) : '—'}</b>${sp.closed && sp.area !== null ? 'المساحة: ' + fmtAreaFull(sp.area) : sp.n + ' إحداثيات محددة'}</div>
+          <div class="p">نسبة المحدد من الممشى<b style="${rt.ok ? '' : 'font-size:11px;color:#a33'}">${rt.text}</b></div>
         </div>`;
-      } else if (points.length >= 2) {
-        sum = `<div class="sumrow">
-          <div>طول المسار (الصور)<b>${fmtLen(a.total.perim)}</b></div>
-          <div>طول المسار المحدد<b>${n ? fmtLen(a.picked.perim) : '—'}</b></div>
-          <div class="p">النسبة المئوية<b>${n && a.total.perim > 0 ? (a.picked.perim / a.total.perim * 100).toFixed(1) + '%' : '—'}</b></div>
-        </div>`;
-      }
 
       statusEl.textContent = 'جاري تحميل صورة الخريطة...';
       const mapImg = await mapImage();
@@ -623,10 +719,10 @@
       const firstRows = 10, nextRows = 34;
       pages.push(`
         <h2>تقرير إحداثيات النقاط</h2>
-        <div class="meta">عدد النقاط: ${points.length} — المحددة: ${n} — ${isClosed() ? 'شكل مغلق' : 'مسار مفتوح'}<br>تاريخ التقرير: ${new Date().toLocaleString('ar-SA')}</div>
+        <div class="meta">عدد النقاط: ${points.length} — المحددة: ${n} — ${sp.dist === null ? '—' : (sp.closed ? 'شكل مغلق' : 'مسار مفتوح')} — حد دقة GPS: ${ACC_LIMIT} م<br>تاريخ التقرير: ${new Date().toLocaleString('ar-SA')}</div>
         ${sum}
         <div class="shape">${mapImg ? `<img src="${mapImg}" style="width:100%;border-radius:6px;border:1px solid #ccd">` : ''}
-          <div class="legend"><span style="background:#3b3bff"></span>إحداثيات الصور<span style="background:#ef6c00"></span>الإحداثيات المحددة</div>
+          <div class="legend"><span style="background:#3b3bff"></span>إحداثيات الصور<span style="background:#ef6c00"></span>الإحداثيات المحددة<span style="background:#00e676"></span>مسار المشي</div>
         </div>
         <table>${head}<tbody>${points.slice(0, firstRows).map(row).join('')}</tbody></table>`);
       for (let i = firstRows; i < points.length; i += nextRows)
@@ -681,10 +777,14 @@
   };
 
   document.getElementById('clearBtn').onclick = async () => {
-    if (!points.length || !confirm('مسح جميع النقاط والصور نهائياً؟')) return;
+    if ((!points.length && !track.length) || !confirm('مسح جميع النقاط والصور ومسار المشي نهائياً؟')) return;
     stopPick();
-    points = [];
-    redraw(); await persist();
+    stopTrack();
+    points = []; track = []; rejected = 0;
+    trackLine.setLatLngs([]);
+    trackBtn.textContent = '🚶 بدء تتبع المشي';
+    redraw(); await persist(); await persistTrack();
+    updateTrackInfo();
     statusEl.textContent = 'تم المسح.';
   };
 
@@ -692,6 +792,13 @@
   applyView();
   applyShape();
   (async () => {
+    const st = await DB.load('track', { track: [], rejected: 0 });
+    track = Array.isArray(st.track) ? st.track : [];
+    rejected = st.rejected || 0;
+    trackLine.setLatLngs(track.map(c => [c.lat, c.lng]));
+    if (track.length) trackBtn.textContent = '🚶 متابعة تتبع المشي';
+    updateTrackInfo();
+    updateSummary();
     const saved = await DB.load();
     if (saved.length) {
       points = saved.map(p => ({ pick: null, ...p }));

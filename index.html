@@ -103,6 +103,64 @@
   .fs-start { background: #fff; border: 3px solid #000; border-radius: 8px; font-size: 12px; font-weight: bold; padding: 2px 4px; white-space: nowrap;
     box-shadow: 0 1px 5px rgba(0,0,0,.4); text-align: center; }
 
+  /* ===== مسح النظافة ===== */
+  #svBtn { background: #00695c; color: #fff; }
+  #svCard { margin: 0 16px 10px; background: #fff; border: 2px solid #00695c; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+  #svCard[hidden] { display: none; }
+  .sv-head { display: flex; justify-content: space-between; align-items: center; color: #004d40; font-size: 16px; gap: 8px; }
+  .sv-switch { display: flex; align-items: center; gap: 8px; font-weight: bold; background: #e0f2f1; padding: 8px 10px; border-radius: 8px; line-height: 1.5; }
+  .sv-switch input { width: 22px; height: 22px; flex: 0 0 auto; }
+  .sv-approved { background: #fff3e0; color: #8a4b00; font-weight: bold; padding: 8px 10px; border-radius: 8px; }
+  .sv-approved[hidden] { display: none; }
+  .sv-sec { border: 1px solid #cfd8dc; border-radius: 10px; padding: 8px 10px; }
+  .sv-sec summary { font-weight: bold; color: #004d40; cursor: pointer; padding: 4px 0; }
+  .sv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 8px; }
+  .sv-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #37474f; min-width: 0; }
+  .sv-grid .sv-wide { grid-column: 1 / -1; }
+  .sv-grid input, .sv-grid select, #svObsSheet select, #svObsSheet textarea { font: inherit; font-size: 15px; padding: 8px; border: 1px solid #b0bec5; border-radius: 8px; background: #fff; min-width: 0; width: 100%; box-sizing: border-box; }
+  .sv-row { display: flex; gap: 6px; }
+  .sv-now { background: #eceff1; color: #263238; padding: 6px 10px; font-size: 12px; flex: 0 0 auto; }
+  .sv-note { font-size: 12.5px; color: #546e7a; line-height: 1.7; margin-top: 6px; }
+  .sv-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .sv-btns button { background: #e0f2f1; color: #004d40; padding: 10px 12px; font-size: 13.5px; }
+  .sv-main button { flex: 1; background: #00695c; color: #fff; }
+  .sv-main #svNewRound { background: #455a64; }
+  .sv-ded { margin-top: 6px; }
+  .sv-ded input { width: 100%; box-sizing: border-box; font-size: 15px; padding: 6px; border: 1px solid #b0bec5; border-radius: 6px; text-align: center; }
+  #svResult .sv-big { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+  #svResult .sv-big div { border-radius: 10px; padding: 10px; text-align: center; }
+  #svResult .sv-big small { display: block; font-weight: bold; font-size: 12.5px; }
+  #svResult .sv-big b { font-size: 26px; }
+  #svResult .sv-big .prev { background: #ffebee; color: #b71c1c; }
+  #svResult .sv-big .sevi { background: #fff3e0; color: #e65100; }
+  #svResult .sv-big .eq { display: block; font-size: 12px; margin-top: 2px; font-weight: normal; }
+  #svResult h4, #svObsList h4, #svRounds h4, #svLog h4 { margin: 12px 0 6px; color: #004d40; font-size: 15px; }
+  #svResult td, #svObsList td, #svRounds td, #svLog td { text-align: right; font-size: 13px; }
+  .sv-tbl-wrap { overflow-x: auto; }
+  .sv-segs { display: flex; flex-wrap: wrap; gap: 3px; margin: 6px 0; }
+  .sv-segs span { width: 22px; height: 22px; border-radius: 4px; font-size: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-family: Arial; }
+  .sv-c0 { background: #2e7d32; } .sv-c1 { background: #f9a825; } .sv-c2 { background: #ef6c00; } .sv-c3 { background: #c62828; }
+  .sv-warn { background: #fff8e1; color: #6d4c00; border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.7; margin-top: 8px; }
+  .sv-ded-res { background: #ede7f6; color: #311b92; border-radius: 8px; padding: 8px 10px; margin-top: 8px; line-height: 1.8; }
+  #svObsList select, #svObsList input { font-size: 13px; padding: 4px; border: 1px solid #b0bec5; border-radius: 6px; max-width: 150px; }
+  #svObsList img { width: 48px; height: 36px; object-fit: cover; border-radius: 4px; }
+  .sv-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4800; background: #fff; border-top: 4px solid #00695c; padding: 12px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -4px 16px rgba(0,0,0,.3); display: flex; flex-direction: column; gap: 8px; max-height: 85vh; overflow-y: auto; direction: rtl; }
+  .sv-sheet[hidden] { display: none; }
+  .sv-sheet-title { font-weight: bold; font-size: 16px; color: #004d40; }
+  .sv-sheet label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+  #svObsImg { max-height: 120px; object-fit: contain; border-radius: 8px; background: #eceff1; }
+  .sv-sev { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .sv-sev label { flex-direction: row; align-items: center; gap: 6px; background: #f5f7f8; border-radius: 8px; padding: 8px; }
+  .sv-sev input { width: 20px; height: 20px; }
+  .sv-sheet-btns { display: flex; gap: 8px; }
+  .sv-sheet-btns button { flex: 1; padding: 14px; font-size: 15px; }
+  #svObsSave, #svDupMerge { background: #00695c; color: #fff; }
+  #svObsSkip, #svDupSeparate { background: #eceff1; color: #263238; }
+  .exp-label { margin: 0 16px 6px; font-size: 13px; font-weight: bold; color: #6a1b9a; background: #f3e5f5; border-radius: 8px; padding: 8px 10px; }
+  .exp-label[hidden] { display: none; }
+  body.sv-drawing #map { outline: 3px dashed #ef6c00; cursor: crosshair; }
+
   /* ===== بطاقة «أنت قطعت» ونتيجة المساحات ===== */
   #arCard { position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 4000; display: none; background: #1b5e20; color: #fff;
     border-radius: 14px; padding: 14px 12px; font-size: 15.5px; font-weight: bold; box-shadow: 0 4px 14px rgba(0,0,0,.35); text-align: center; line-height: 1.5; }
@@ -134,6 +192,19 @@
   #arResult .ar-note { font-size: 11.5px; color: #667; margin-top: 8px; line-height: 1.6; }
   .ar-chk { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: #1565c0; margin-top: 3px; white-space: nowrap; }
   .ar-chk input { width: 16px; height: 16px; }
+  #calcBox { margin: 0 16px 8px; background: #fff; border: 2px solid #455a64; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+  #calcBox[hidden] { display: none; }
+  #calcBox .calc-title { color: #263238; font-size: 15px; }
+  #calcBox label { display: flex; align-items: center; gap: 8px; line-height: 1.5; }
+  #calcBox input[type=radio] { width: 20px; height: 20px; flex: 0 0 auto; }
+  .calc-opts { display: flex; align-items: center; gap: 8px; }
+  .calc-opts[hidden] { display: none; }
+  #gpsTol { width: 80px; font-size: 16px; padding: 6px; border: 1px solid #b0bec5; border-radius: 8px; text-align: center; }
+  #dotsBtn { background: #eceff1; color: #263238; padding: 10px; font-size: 14px; }
+  .calc-legend { font-size: 12px; color: #555; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .calc-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-inline-start: 8px; }
+  #arResult .ar-big .pts { background: #eef3f0; color: #1b5e20; }
+  .ar-warn { margin-top: 8px; font-size: 12.5px; background: #fff8e1; color: #6d4c00; border-radius: 8px; padding: 8px 10px; line-height: 1.7; }
   .ar-trip { background: #e3f2fd; color: #0d47a1; font-weight: bold; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 14.5px; line-height: 1.6; }
   .ar-close-opt { display: flex; align-items: center; gap: 8px; font-size: 13.5px; line-height: 1.5; }
   .ar-close-opt input { width: 20px; height: 20px; flex: 0 0 auto; }
@@ -292,6 +363,7 @@
   <button id="circleBtn">⭕ المحيط</button>
   <button id="fieldBtn">🗺️ محيط ميداني</button>
   <button id="northBtn">🧭 إعادة توجيه الخريطة للشمال</button>
+  <button id="svBtn">🧹 مسح النظافة</button>
 </div>
 
 <div class="options">
@@ -397,6 +469,111 @@
 </div>
 <button id="arCard" type="button">📏 أنت قطعت: <b id="arDist">0 م</b> — اضغط لحساب المساحة والنسبة</button>
 
+
+<!-- ===================== مسح النظافة الميداني (وحدة مستقلة اختيارية) ===================== -->
+<div id="svCard" hidden>
+  <div class="sv-head">
+    <b>🧹 مسح ميداني لقياس تدني مستوى النظافة</b>
+    <button id="svClose" class="cc-x" type="button" aria-label="إغلاق">✖</button>
+  </div>
+  <label class="sv-switch"><input type="checkbox" id="svOn"> تشغيل وضع مسح النظافة (كل صورة جديدة تُسجَّل كملاحظة نفايات)</label>
+  <div id="svApprovedTag" class="sv-approved" hidden>🔒 الجولة معتمدة — أي تعديل يتطلب كتابة السبب ويُسجَّل في سجل التعديلات</div>
+
+  <details open class="sv-sec"><summary>1. بيانات الجولة</summary>
+    <div class="sv-grid">
+      <label>اسم الحي<input id="svDistrict" type="text" autocomplete="off"></label>
+      <label>اسم المقاول<input id="svContractor" type="text" autocomplete="off"></label>
+      <label>رقم العقد أو المشروع<input id="svContract" type="text" autocomplete="off"></label>
+      <label>اسم المراقب<input id="svInspector" type="text" autocomplete="off"></label>
+      <label>بداية الجولة<span class="sv-row"><input id="svStart" type="datetime-local"><button type="button" class="sv-now" data-for="svStart">الآن</button></span></label>
+      <label>نهاية الجولة<span class="sv-row"><input id="svEnd" type="datetime-local"><button type="button" class="sv-now" data-for="svEnd">الآن</button></span></label>
+      <label>نوع الجولة<select id="svKind"><option value="car">🚗 سيارة</option><option value="walk">🚶 مشي</option></select></label>
+      <label>طول القطاع القياسي (م)<input id="svSegLen" type="number" inputmode="decimal" min="10" step="10" value="100"></label>
+    </div>
+  </details>
+
+  <details class="sv-sec"><summary>2. حدود الحي ودقة GPS</summary>
+    <div class="sv-note">ارسم حدود الحي بالضغط على الخريطة نقطة بعد نقطة. تُحسب فقط المسافة والملاحظات داخل الحدود (مع الهامش). بدون حدود يُحسب المسار كاملاً.</div>
+    <div class="sv-btns">
+      <button type="button" id="svDraw">✏️ رسم حدود الحي</button>
+      <button type="button" id="svDrawDone" hidden>✔ إنهاء الرسم</button>
+      <button type="button" id="svDrawUndo" hidden>↶ آخر نقطة</button>
+      <button type="button" id="svBoundClear">🗑 مسح الحدود</button>
+    </div>
+    <div class="sv-grid">
+      <label>هامش الحدود لانحراف GPS (م)<input id="svMargin" type="number" inputmode="decimal" min="0" value="20"></label>
+    </div>
+    <div id="svBoundInfo" class="sv-note"></div>
+  </details>
+
+  <details class="sv-sec"><summary>3. أوزان الشدة وتصنيف القطاعات (حسب العقد)</summary>
+    <div class="sv-grid">
+      <label>خفيفة (نقطة)<input id="svW1" type="number" inputmode="decimal" min="0" value="1"></label>
+      <label>متوسطة (نقطة)<input id="svW2" type="number" inputmode="decimal" min="0" value="2"></label>
+      <label>شديدة (نقطة)<input id="svW3" type="number" inputmode="decimal" min="0" value="3"></label>
+      <label>تراكم كبير / نقطة سوداء<input id="svW4" type="number" inputmode="decimal" min="0" value="5"></label>
+      <label>تدنٍ خفيف حتى (نقطة)<input id="svT1" type="number" inputmode="decimal" min="0" value="2"></label>
+      <label>تدنٍ متوسط حتى (نقطة)<input id="svT2" type="number" inputmode="decimal" min="0" value="5"></label>
+      <label>القطاع «متدني النظافة» إذا تجاوزت نقاطه<input id="svDeg" type="number" inputmode="decimal" min="0" value="0"></label>
+      <label>أقصى نقاط محتسبة للقطاع (لمؤشر الشدة)<input id="svCap" type="number" inputmode="decimal" min="1" value="10"></label>
+    </div>
+    <div class="sv-note">0 نقطة = نظيف. أكثر من «تدنٍ متوسط حتى» = تدنٍ شديد.</div>
+  </details>
+
+  <details class="sv-sec"><summary>4. جدول الخصم المعتمد في العقد (اختياري)</summary>
+    <div class="sv-grid">
+      <label class="sv-wide">بند العقد المستخدم<input id="svClause" type="text" autocomplete="off" placeholder="مثال: البند 12 — جدول الجزاءات"></label>
+      <label>قيمة المستخلص (اختياري)<input id="svValue" type="number" inputmode="decimal" min="0" placeholder="ريال"></label>
+    </div>
+    <div class="sv-note">أدخل شرائح نسبة انتشار التدني ونسبة الخصم المقابلة لها كما في العقد:</div>
+    <table class="sv-ded"><thead><tr><th>من %</th><th>إلى %</th><th>الخصم %</th></tr></thead><tbody id="svDedRows"></tbody></table>
+    <div class="sv-btns"><button type="button" id="svDedAdd">＋ شريحة</button><button type="button" id="svDedDel">－ آخر شريحة</button></div>
+  </details>
+
+  <div class="sv-btns sv-main">
+    <button type="button" id="svApprove">✅ اعتماد الجولة</button>
+    <button type="button" id="svNewRound">💾 حفظ الجولة وبدء جولة جديدة</button>
+  </div>
+
+  <div id="svResult"></div>
+  <div id="svObsList"></div>
+  <div id="svRounds"></div>
+  <div id="svLog"></div>
+</div>
+
+<!-- ورقة تسجيل ملاحظة نفايات -->
+<div id="svObsSheet" class="sv-sheet" hidden>
+  <div class="sv-sheet-title">🧹 ملاحظة نفايات — الصورة <b id="svObsName"></b></div>
+  <img id="svObsImg" alt="">
+  <label>نوع المخالفة
+    <select id="svObsType">
+      <option>نفايات منزلية متناثرة</option><option>أكياس نفايات</option><option>مخلفات بناء</option><option>أثاث ومخلفات كبيرة</option>
+      <option>حاوية ممتلئة أو فائضة</option><option>مخلفات زراعية</option><option>أخرى</option>
+    </select>
+  </label>
+  <div class="sv-sev" id="svObsSev">
+    <label><input type="radio" name="svSev" value="1" checked> خفيفة</label>
+    <label><input type="radio" name="svSev" value="2"> متوسطة</label>
+    <label><input type="radio" name="svSev" value="3"> شديدة</label>
+    <label><input type="radio" name="svSev" value="4"> تراكم كبير / نقطة سوداء</label>
+  </div>
+  <label>ملاحظات المراقب<textarea id="svObsNote" rows="2"></textarea></label>
+  <div class="sv-sheet-btns">
+    <button type="button" id="svObsSave">حفظ الملاحظة</button>
+    <button type="button" id="svObsSkip">ليست ملاحظة نفايات</button>
+  </div>
+</div>
+
+<!-- ورقة الملاحظة المكررة -->
+<div id="svDupSheet" class="sv-sheet" hidden>
+  <div class="sv-sheet-title">⚠️ قد تكون هذه الملاحظة مكررة</div>
+  <div id="svDupText" class="sv-note"></div>
+  <div class="sv-sheet-btns">
+    <button type="button" id="svDupMerge">دمجها مع الملاحظة السابقة</button>
+    <button type="button" id="svDupSeparate">احتسابها ملاحظة مستقلة</button>
+  </div>
+</div>
+
 <!-- اختيار طريقة الحساب تلقائياً: محيط مُدخل أو تتبع المشي -->
 <div id="modeBox">
   <label for="perimM" class="cc-title">أدخل طول المحيط بالمتر</label>
@@ -419,7 +596,22 @@
   <div class="stat"><small id="sWalkLabel">إجمالي المسافة الممشاة</small><b id="sWalk">—</b><em id="sWalkSub"></em></div>
   <div class="stat"><small id="sSpecLabel">إجمالي المسافة المحددة</small><b id="sSpec">—</b><em id="sSpecSub"></em></div>
   <div class="stat pct"><small>نسبة مسافات الصور من المسافة المقطوعة</small><b id="sPdPct">—</b></div>
+  <div class="stat pct" id="gpsStatBox" hidden><small>نسبة نقاط GPS المطابقة لخطوط الصور</small><b id="sGpsPct">—</b></div>
   <div class="stat pct"><small>نسبة المساحات (مساحة الصور ÷ مساحة المسار)</small><b id="sAreaPct">—</b></div>
+</div>
+
+<div id="expLabel" class="exp-label" hidden>🧪 حسابات تجريبية — التقييم المعتمد في «مسح النظافة» (القطاعات الثابتة وشدة الملاحظات)</div>
+<!-- طريقة حساب النسبة (ثابتة حتى لا تُفقد الكتابة أثناء تحديث GPS) -->
+<div id="calcBox" hidden>
+  <b class="calc-title">طريقة حساب النسبة</b>
+  <label><input type="radio" name="calcM" value="dist"> الحساب بالمسافة — الطريقة الحالية (الافتراضية والأدق)</label>
+  <label><input type="radio" name="calcM" value="points"> الحساب بعدد نقاط GPS</label>
+  <div id="calcPointsOpts" class="calc-opts" hidden>
+    <label for="gpsTol">مسافة السماحية</label>
+    <input id="gpsTol" type="number" inputmode="decimal" min="1" max="500" step="1" value="20"> <span>م</span>
+  </div>
+  <button id="dotsBtn" type="button">📍 إظهار نقاط GPS</button>
+  <div class="calc-legend"><i style="background:#2e7d32"></i>مطابقة <i style="background:#9e9e9e"></i>غير مطابقة <i style="background:#d32f2f"></i>مستبعدة</div>
 </div>
 
 <!-- نتيجة المساحة والنسبة من المسافة المقطوعة -->
@@ -483,8 +675,9 @@
 
   // ===== إعدادات تتبع المشي =====
   const ACC_LIMIT = 25;   // حد الدقة بالمتر: أي نقطة GPS دقتها أسوأ من هذا تُستبعد من المسافة الممشاة
-  const MIN_STEP = 5;     // لا تُسجَّل نقطة جديدة إلا إذا تحرك المستخدم 5 م على الأقل (يمنع تذبذب GPS أثناء الوقوف)
+  const MIN_STEP = 3;     // المشي: لا تُسجَّل نقطة جديدة إلا بعد التحرك 3 م على الأقل (تسجيل منتظم ويمنع تذبذب GPS أثناء الوقوف)
   let track = [];         // نقاط المسار المقبولة بالترتيب
+  let trackBad = [];      // نقاط مستبعدة لضعف الدقة (تُعرض بالأحمر)
   let rejected = 0;       // عدد النقاط المستبعدة لضعف الدقة
   let watchId = null;
   let wakeLock = null;
@@ -494,7 +687,7 @@
   // حالة «رسم محيط ميداني وحساب المساحة»
   const fs = {
     target: 0, type: 'walk', accLimit: 20, closeR: 20,
-    pts: [], dist: 0, rejected: 0, jumps: 0,
+    pts: [], bad: [], dist: 0, rejected: 0, jumps: 0,
     state: 'idle',            // idle | tracking | paused | closed
     watch: null, alert90: false, leftStart: false, nearShown: false, lastAcc: null, result: null, lastHeading: NaN
   };
@@ -540,7 +733,7 @@
       } catch (e) { return def; }
     }
   };
-  const persistTrack = () => DB.save({ track, rejected }, 'track');
+  const persistTrack = () => DB.save({ track, rejected, bad: trackBad.slice(-2000) }, 'track');
   async function persist() {
     const ok = await DB.save(points);
     if (!ok) statusEl.textContent = '⚠️ تعذّر الحفظ التلقائي في هذا المتصفح — لا تغلق الصفحة قبل التصدير.';
@@ -679,7 +872,7 @@
 
   function onTrackPos(pos) {
     const c = pos.coords;
-    if (!(c.accuracy <= ACC_LIMIT)) { rejected++; updateTrackInfo(); return; }   // استبعاد الدقة الضعيفة
+    if (!(c.accuracy <= ACC_LIMIT)) { rejected++; trackBad.push({ lat: c.latitude, lng: c.longitude, why: 'acc' }); updateTrackInfo(); return; }   // استبعاد الدقة الضعيفة
     const pt = { lat: +c.latitude.toFixed(6), lng: +c.longitude.toFixed(6), acc: Math.round(c.accuracy), t: Date.now() };
     const last = track[track.length - 1];
     if (last && distM(last, pt) < MIN_STEP) return;
@@ -968,7 +1161,7 @@
   }
   const fsSave = () => DB.save({
     target: fs.target, type: fs.type, accLimit: fs.accLimit, closeR: fs.closeR, pts: fs.pts, dist: fs.dist,
-    rejected: fs.rejected, jumps: fs.jumps, state: fs.state === 'tracking' ? 'paused' : fs.state, alert90: fs.alert90, result: fs.result
+    rejected: fs.rejected, jumps: fs.jumps, bad: fs.bad.slice(-2000), state: fs.state === 'tracking' ? 'paused' : fs.state, alert90: fs.alert90, result: fs.result
   }, 'field');
 
   function fsToast(msg, ms = 9000) {
@@ -1098,14 +1291,14 @@
     fs.lastAcc = c.accuracy;
     if (fs.state !== 'tracking') { fsUpdateUI(); return; }
     const st = FS_STYLE[fs.type];
-    if (!(c.accuracy <= fs.accLimit)) { fs.rejected++; fsUpdateUI(); return; }      // دقة ضعيفة
+    if (!(c.accuracy <= fs.accLimit)) { fs.rejected++; fs.bad.push({ lat: c.latitude, lng: c.longitude, why: 'acc' }); fsUpdateUI(); return; }      // دقة ضعيفة
     const pt = { lat: c.latitude, lng: c.longitude, acc: Math.round(c.accuracy), t: pos.timestamp || Date.now() };
     const last = fs.pts[fs.pts.length - 1];
     let heading = isFinite(c.heading) && c.speed > 1 ? c.heading : null;
     if (last) {
       const d = distM(last, pt);
       const dt = Math.max(1, (pt.t - last.t) / 1000);
-      if (d / dt > st.maxSpeed) { fs.jumps++; fsUpdateUI(); return; }              // قفزة غير طبيعية
+      if (d / dt > st.maxSpeed) { fs.jumps++; fs.bad.push({ lat: pt.lat, lng: pt.lng, why: 'jump' }); fsUpdateUI(); return; }              // قفزة غير طبيعية
       // الاتجاه من حركة حقيقية فقط؛ اهتزاز GPS أثناء الوقوف لا يغيّر اتجاه الرمز
       if (heading === null && d >= st.minStep) heading = bearing(last, pt);
       if (heading !== null) fs.lastHeading = heading;
@@ -1173,7 +1366,8 @@
     if (fsAccCircle) { map.removeLayer(fsAccCircle); fsAccCircle = null; }
     fsEl('fsNear').classList.remove('show');
     if (!fs.target && !confirm('لم تُدخل طول المحيط المستهدف.\nتريد البدء بدونه؟ (لن تظهر المسافة المتبقية ونسبة الإنجاز)')) return;
-    Object.assign(fs, { pts: [], dist: 0, rejected: 0, jumps: 0, alert90: false, leftStart: false, nearShown: false, result: null, state: 'tracking' });
+    Object.assign(fs, { pts: [], bad: [], dist: 0, rejected: 0, jumps: 0, alert90: false, leftStart: false, nearShown: false, result: null, state: 'tracking' });
+    arClearRoute('field');   // مسار جديد = مضلع قديم يُحذف
     fsRedrawPath();
     await fsWatch(true);
     fsSave(); fsUpdateUI();
@@ -1213,11 +1407,12 @@
   fsEl('fsClear').onclick = () => {
     if (!confirm('مسح مسار المحيط الميداني ونتيجته نهائياً؟')) return;
     fsWatch(false);
-    Object.assign(fs, { pts: [], dist: 0, rejected: 0, jumps: 0, alert90: false, leftStart: false, nearShown: false, result: null, state: 'idle', lastAcc: null });
+    Object.assign(fs, { pts: [], bad: [], dist: 0, rejected: 0, jumps: 0, alert90: false, leftStart: false, nearShown: false, result: null, state: 'idle', lastAcc: null });
     if (fsMe) { map.removeLayer(fsMe); fsMe = null; }
     if (fsAccCircle) { map.removeLayer(fsAccCircle); fsAccCircle = null; }
     fsEl('fsNear').classList.remove('show');
     fsRedrawPath(); fsSave(); fsUpdateUI();
+    arClearRoute('field');   // يمسح المضلع الناتج عن هذا المسار أيضاً
   };
 
   // حفظ النتيجة كملف CSV يفتح في Excel
@@ -1263,7 +1458,7 @@
     fs.type = getSetting('pm_fs_type', 'walk');
     fsReadSettings();
     if (d && Array.isArray(d.pts)) {
-      Object.assign(fs, { pts: d.pts, dist: d.dist || 0, rejected: d.rejected || 0, jumps: d.jumps || 0, alert90: !!d.alert90, result: d.result || null, type: d.type || fs.type });
+      Object.assign(fs, { pts: d.pts, bad: Array.isArray(d.bad) ? d.bad : [], dist: d.dist || 0, rejected: d.rejected || 0, jumps: d.jumps || 0, alert90: !!d.alert90, result: d.result || null, type: d.type || fs.type });
       fs.state = d.pts.length ? (d.state === 'closed' ? 'closed' : 'paused') : 'idle';
       fsRecalcDist();
       if (fs.pts.length) fsEl('fieldCard').classList.add('open');
@@ -1342,6 +1537,69 @@
     return { ok: true, route, target, pct, left: target - route, text: (Math.round(pct * 10) / 10) + '%' };
   }
 
+  // ===== طريقة حساب النسبة: بالمسافة (الافتراضية والأدق) أو بعدد نقاط GPS (اختيارية) =====
+  let calcMethod = getSetting('pm_calc', 'dist') === 'points' ? 'points' : 'dist';
+  let gpsTol = parseFloat(getSetting('pm_tol', '20')) || 20;      // مسافة السماحية بالمتر
+  let gpsDotsOn = getSetting('pm_dots', '0') === '1';
+  const gpsDotsLayer = L.layerGroup().addTo(map);
+  const gpsRenderer = L.canvas({ padding: 0.3 });                 // رسم خفيف على الجوال
+
+  // خطوط الصور: من إحداثية الصورة إلى إحداثيتها المحددة (A→A′، B→B′ …)
+  const photoLines = () => points.filter(p => p.pick).map(p => ({ name: p.name, a: { lat: p.lat, lng: p.lng }, b: p.pick }));
+
+  // أقصر مسافة (م) بين نقطة GPS وخط صورة — turf.pointToLineDistance، وإن لم يُحمَّل Turf نستخدم إسقاطاً محلياً
+  function distToLineM(pt, a, b) {
+    if (window.turf && turf.pointToLineDistance && (a.lat !== b.lat || a.lng !== b.lng)) {
+      try {
+        const d = turf.pointToLineDistance(turf.point([pt.lng, pt.lat]), turf.lineString([[a.lng, a.lat], [b.lng, b.lat]]), { units: 'meters' });
+        if (isFinite(d)) return d;
+      } catch (e) {}
+    }
+    const R = 6371008.8, k = Math.PI / 180, c = Math.cos(pt.lat * k);
+    const X = q => [(q.lng - pt.lng) * k * R * c, (q.lat - pt.lat) * k * R];
+    const [ax, ay] = X(a), [bx, by] = X(b), dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+    const t = L2 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / L2)) : 0;
+    return Math.hypot(ax + t * dx, ay + t * dy);
+  }
+
+  // نسبة نقاط GPS = النقاط المطابقة لخطوط الصور ÷ إجمالي النقاط المقبولة × 100
+  function gpsPointsRatio() {
+    const s = arSource(), pts = s ? s.pts : [], lines = photoLines();
+    const field = s && s.kind === 'field';
+    const excAcc = s ? (field ? fs.rejected : rejected) : 0, excJump = field ? fs.jumps : 0;
+    const bad = s ? (field ? fs.bad : trackBad) : [];
+    // النقطة تُحسب مرة واحدة فقط حتى لو كانت قريبة من أكثر من خط
+    const flags = pts.map(p => lines.some(l => distToLineM(p, l.a, l.b) <= gpsTol));
+    const matched = flags.reduce((n, f) => n + (f ? 1 : 0), 0);
+    const base = { s, route: s ? s.dist : 0, total: pts.length, matched, unmatched: pts.length - matched,
+      excAcc, excJump, excluded: excAcc + excJump, flags, bad, lines, tol: gpsTol };
+    if (!pts.length) return { ...base, ok: false, text: 'ابدأ تتبع الرحلة أولًا لحساب النسبة' };
+    if (!lines.length) return { ...base, ok: false, text: 'حدّد إحداثية بديلة لصورة واحدة على الأقل لإنشاء خطوط الصور' };
+    const pct = matched / pts.length * 100;
+    return { ...base, ok: true, pct, text: pct.toFixed(2) + '%' };
+  }
+
+  // نقاط GPS على الخريطة: أخضر مطابق، رمادي غير مطابق، أحمر مستبعد
+  let dotsTimer = null;
+  function drawGpsDots() {
+    gpsDotsLayer.clearLayers();
+    if (!gpsDotsOn) return;
+    const r = gpsPointsRatio();
+    if (!r.s) return;
+    const dot = (p, color) => L.circleMarker([p.lat, p.lng], { renderer: gpsRenderer, radius: 4, weight: 1, color: '#fff', fillColor: color, fillOpacity: 1, interactive: false }).addTo(gpsDotsLayer);
+    r.s.pts.forEach((p, i) => dot(p, r.flags[i] ? '#2e7d32' : '#9e9e9e'));
+    r.bad.forEach(p => dot(p, '#d32f2f'));
+  }
+  const scheduleDots = () => { if (!gpsDotsOn) return; clearTimeout(dotsTimer); dotsTimer = setTimeout(drawGpsDots, 400); };
+
+  function updateCalcUI() {
+    document.querySelectorAll('input[name="calcM"]').forEach(r => r.checked = r.value === calcMethod);
+    arEl('calcPointsOpts').hidden = calcMethod !== 'points';
+    arEl('gpsTol').value = gpsTol;
+    arEl('dotsBtn').textContent = gpsDotsOn ? '🙈 إخفاء نقاط GPS' : '📍 إظهار نقاط GPS';
+    arEl('gpsStatBox').hidden = calcMethod !== 'points';
+  }
+
   function arUpdateCard() {
     const s = arSource(), card = arEl('arCard');
     const show = !!s && (s.pts.length > 0 || fs.state === 'tracking' || watchId !== null);
@@ -1351,6 +1609,10 @@
     // تحديث نسبة مسافات الصور مباشرة مع كل نقطة GPS
     const sp = arEl('sPdPct');
     if (sp) { const r = photoDistRatio(); sp.textContent = r.text; sp.classList.toggle('msg', !r.ok); }
+    const sg = arEl('sGpsPct');
+    if (sg && calcMethod === 'points') { const g = gpsPointsRatio(); sg.textContent = g.text; sg.classList.toggle('msg', !g.ok); }
+    scheduleDots();
+    svSchedule();
     if (pdShown && !arEl('arConfirm').classList.contains('show')) arRender();
   }
 
@@ -1428,6 +1690,7 @@
 
   // يُعاد حساب كل شيء فور تغيير الصور المحددة
   function arRefresh(fit) {
+    scheduleDots();
     if (ar) { arRecalcImages(fit); return; }
     arDraw(fit); arRender(); updateSummary(); arUpdateCard();
   }
@@ -1466,7 +1729,7 @@
 
   function arRender() {
     const box = arEl('arResult');
-    if (!ar && !pdShown) { box.classList.remove('show'); box.innerHTML = ''; return; }
+    if (!ar && !pdShown) { box.classList.remove('show'); box.innerHTML = ''; arEl('calcBox').hidden = true; return; }
     const r = photoDistRatio(), pc = r.pc, tp = tripProgress();
     const rowsTxt = pc.rows.map(x => `${x.name}↔${x.name}′ ${x.d.toFixed(1)}`).join(' + ');
     const im = ar && ar.img || {};
@@ -1478,6 +1741,11 @@
         <tr><td>المسافة المقطوعة فعليًا</td><td>${fmtNice(r.route)}</td></tr>
         <tr><td>المتبقي من الهدف</td><td>${tp.ok ? (tp.left >= 0 ? fmtNice(tp.left) : 'تجاوزت الهدف بـ ' + fmtNice(-tp.left)) : '—'}</td></tr>
         <tr><td>نسبة إنجاز الرحلة</td><td>${tp.text}</td></tr>
+      </table>
+      ${calcMethod === 'dist' ? `
+      <h3 style="margin-top:12px"><span>📏 نسبة المسافات (الحساب بالمسافة)</span></h3>
+      <table>
+        <tr><td>طريقة الحساب المختارة</td><td>الحساب بالمسافة</td></tr>
         <tr><td>عدد الصور المحددة</td><td>${pc.n ? photoCountAr(pc.n) : '—'}</td></tr>
         <tr><td>مجموع عمود «المسافة بينهما»</td><td>${pc.n ? pc.sum.toFixed(1) + ' م' : '—'}</td></tr>
         ${rowsTxt ? `<tr><td colspan="2" style="font-weight:normal;font-size:12px;color:#556"><span dir="ltr">${rowsTxt}</span> م — هذا مجموع مسافات فقط، ولا يُستخدم لحساب أي مساحة.</td></tr>` : ''}
@@ -1485,7 +1753,23 @@
       <div class="ar-big">
         <div class="dist" style="grid-column:1 / -1"><small>نسبة مسافات الصور من المسافة المقطوعة</small><b class="${r.ok ? '' : 'msg'}">${r.text}</b>
           ${r.ok ? `<div style="font-size:12px;margin-top:2px">${pc.sum.toFixed(1)} م ÷ ${Math.round(r.route * 10) / 10} م × 100</div>` : ''}</div>
+      </div>` : (() => { const g = gpsPointsRatio(); return `
+      <h3 style="margin-top:12px"><span>📍 نسبة نقاط GPS (الحساب بعدد النقاط)</span></h3>
+      <table>
+        <tr><td>طريقة الحساب المختارة</td><td>الحساب بعدد نقاط GPS</td></tr>
+        <tr><td>المسافة المقطوعة</td><td>${fmtNice(g.route)}</td></tr>
+        <tr><td>إجمالي نقاط GPS المقبولة</td><td>${g.total.toLocaleString('en')} نقطة</td></tr>
+        <tr><td>نقاط GPS المطابقة لخطوط الصور</td><td style="color:#2e7d32">${g.matched.toLocaleString('en')} نقطة</td></tr>
+        <tr><td>نقاط GPS غير المطابقة</td><td style="color:#616161">${g.unmatched.toLocaleString('en')} نقطة</td></tr>
+        <tr><td>النقاط المستبعدة</td><td style="color:#c62828">${g.excluded} (ضعف الدقة: ${g.excAcc} — قفزات: ${g.excJump})</td></tr>
+        <tr><td>خطوط الصور المستخدمة</td><td><span dir="ltr">${g.lines.length ? g.lines.map(l => l.name + '→' + l.name + '′').join('، ') : '—'}</span></td></tr>
+        <tr><td>مسافة السماحية</td><td>${g.tol} م</td></tr>
+      </table>
+      <div class="ar-big">
+        <div class="pts" style="grid-column:1 / -1"><small>نسبة نقاط GPS المطابقة من إجمالي النقاط المقبولة</small><b class="${g.ok ? '' : 'msg'}">${g.text}</b>
+          ${g.ok ? `<div style="font-size:12px;margin-top:2px">${g.matched} ÷ ${g.total} × 100 = ${g.text}</div>` : ''}</div>
       </div>
+      <div class="ar-warn">⚠️ الحساب بالنقاط يتأثر بعدد مرات تسجيل GPS؛ لذلك يجب استخدام فترة تسجيل موحدة للحصول على مقارنة عادلة.</div>`; })()}
       <h3 style="margin-top:14px"><span>🟩 نسبة المساحات</span></h3>
       ${ar ? `
       <table>
@@ -1505,14 +1789,420 @@
       <div class="ar-note">نسبة مسافات الصور = مجموع عمود «المسافة بينهما» للصور التي حُددت لها إحداثية بديلة ÷ المسافة المقطوعة فعليًا × 100. لا تحتاج إغلاق المسار، ولا تستخدم الخطوط بين الصور.
         نسبة إنجاز الرحلة = المقطوع فعليًا ÷ المستهدف × 100.</div>`;
     box.classList.add('show');
+    arEl('calcBox').hidden = false;
     arEl('arHide').onclick = () => { ar = null; pdShown = false; setSetting('pm_pd', ''); DB.save(null, 'ar'); arRefresh(); };
     const cb = arEl('arCloseBtn'); if (cb) cb.onclick = arAskClose;
+  }
+
+  document.querySelectorAll('input[name="calcM"]').forEach(r => r.onchange = () => {
+    calcMethod = r.value; setSetting('pm_calc', calcMethod);
+    updateCalcUI(); arRender(); updateSummary(); scheduleDots();
+  });
+  arEl('gpsTol').addEventListener('input', () => {
+    const v = parseFloat(arEl('gpsTol').value);
+    if (!(v > 0)) return;
+    gpsTol = v; setSetting('pm_tol', String(v));
+    arRender(); updateSummary(); scheduleDots();
+  });
+  arEl('dotsBtn').onclick = () => {
+    gpsDotsOn = !gpsDotsOn; setSetting('pm_dots', gpsDotsOn ? '1' : '0');
+    updateCalcUI(); drawGpsDots();
+  };
+  updateCalcUI();
+
+  // مسح نتيجة المسار المغلق (المضلع الأخضر وعلامتي البداية والنهاية) عند مسح المسار أو بدء مسار جديد
+  function arClearRoute(kind) {
+    if (ar && (!kind || ar.kind === kind)) { ar = null; DB.save(null, 'ar'); }
+    arRemovePreview();
+    arEl('arConfirm').classList.remove('show');
+    arRefresh(false);
+    drawGpsDots();
   }
 
   async function arRestore() {
     const d = await DB.load('ar', null);
     if (d && Array.isArray(d.pts) && d.pts.length >= 3) ar = d;
     arRefresh(false);
+    drawGpsDots();
+  }
+
+  // ======================================================================
+  // ===== مسح النظافة الميداني — وحدة مستقلة اختيارية (لا تغيّر أي حساب قديم) =====
+  // ======================================================================
+  const SEV_LABEL = { 1: 'خفيفة', 2: 'متوسطة', 3: 'شديدة', 4: 'تراكم كبير / نقطة سوداء' };
+  const SEG_CLASS = ['نظيف', 'تدنٍ خفيف', 'تدنٍ متوسط', 'تدنٍ شديد'];
+  const svEl = id => document.getElementById(id);
+  const sv = {
+    on: false, info: { district: '', contractor: '', contract: '', inspector: '', start: '', end: '', kind: 'car' },
+    segLen: 100, w: { 1: 1, 2: 2, 3: 3, 4: 5 }, t1: 2, t2: 5, deg: 0, cap: 10, margin: 20,
+    boundary: [], drawing: false, approved: false, approvedAt: '', log: [],
+    ded: { clause: '', value: '', rows: [] }, rounds: []
+  };
+  const svLayer = L.layerGroup().addTo(map);
+  let svBoundLayer = null, svObsQueue = [], svCurObs = null, svDupPending = null, svTimer = null;
+  const svSave = () => DB.save(JSON.parse(JSON.stringify(sv)), 'survey');
+  const nowLocal = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+  const fmtDT = v => v ? new Date(v).toLocaleString('ar-SA') : '—';
+  const num = (v, d) => { const n = parseFloat(String(v).replace(/[٠-٩]/g, x => '٠١٢٣٤٥٦٧٨٩'.indexOf(x)).replace(/[٫,]/g, '.')); return isFinite(n) ? n : d; };
+
+  // ---- داخل حدود الحي (مع هامش لانحراف GPS) ----
+  function svPip(p, poly) {
+    if (window.turf && turf.booleanPointInPolygon) {
+      try { return turf.booleanPointInPolygon(turf.point([p.lng, p.lat]), turf.polygon([[...poly.map(q => [q.lng, q.lat]), [poly[0].lng, poly[0].lat]]])); } catch (e) {}
+    }
+    let inside = false;   // بديل: خوارزمية تقاطع الأشعة
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[i], b = poly[j];
+      if ((a.lat > p.lat) !== (b.lat > p.lat) && p.lng < (b.lng - a.lng) * (p.lat - a.lat) / (b.lat - a.lat) + a.lng) inside = !inside;
+    }
+    return inside;
+  }
+  function svInside(p) {
+    const poly = sv.boundary;
+    if (poly.length < 3) return true;               // بدون حدود: المسار كله محتسب
+    if (svPip(p, poly)) return true;
+    for (let i = 0; i < poly.length; i++) if (distToLineM(p, poly[i], poly[(i + 1) % poly.length]) <= sv.margin) return true;
+    return false;
+  }
+
+  // ---- الحساب الرئيسي: القطاعات الثابتة وشدة الملاحظات ----
+  function svCompute() {
+    const s = arSource(), pts = s ? s.pts : [];
+    const segL = Math.max(1, sv.segLen);
+    // تقسيم المسار إلى مقاطع داخل الحي؛ لا يُعتبر خارجاً إلا بعد 3 قراءات متتالية، وعند العودة يبدأ مقطع جديد بلا مسافة وهمية
+    const pieces = []; let cur = null, state = pts.length ? svInside(pts[0]) : false, outRun = 0, exits = 0;
+    pts.forEach(p => {
+      const raw = svInside(p);
+      if (state) {
+        if (raw) outRun = 0; else outRun++;
+        if (outRun >= 3) { state = false; cur = null; exits++; return; }
+        if (!cur) { cur = []; pieces.push(cur); }
+        cur.push(p);
+      } else if (raw) { state = true; outRun = 0; cur = [p]; pieces.push(cur); }
+    });
+    // مسافة تراكمية داخل الحي فقط
+    let cum = 0; const nodes = [], pairs = [];
+    pieces.forEach((pc, k) => pc.forEach((p, i) => {
+      if (i > 0) { const d = distM(pc[i - 1], p); pairs.push({ a: pc[i - 1], b: p, from: cum, to: cum + d, piece: k }); cum += d; }
+      nodes.push({ p, cum, piece: k });
+    }));
+    const dist = cum;
+    // باقٍ أقل من متر واحد (فروق تقريب GPS) لا يُعتبر قطاعاً جديداً: 5000 م ÷ 100 م = 50 قطاعاً
+    const nSeg = dist >= 1 ? Math.max(1, Math.ceil((dist - 1) / segL)) : 0;
+    const segPts = new Array(nSeg).fill(0), segObs = Array.from({ length: nSeg }, () => []);
+    // الملاحظات (بعد استبعاد المدمجة)
+    const all = points.filter(p => p.obs);
+    const counted = all.filter(p => !p.obs.merged);
+    const rows = counted.map(p => {
+      const w = num(sv.w[p.obs.sev], 0);
+      if (!svInside(p)) return { p, w, seg: null, why: 'خارج حدود الحي' };
+      // إسقاط الملاحظة على أقرب جزء من المسار لمعرفة موقعها الدقيق على طول المسار
+      let bestCum = null, bd = Infinity;
+      const k = Math.PI / 180, R0 = 6371008.8, c0 = Math.cos(p.lat * k);
+      const X = q => [(q.lng - p.lng) * k * R0 * c0, (q.lat - p.lat) * k * R0];
+      pairs.forEach(pr => {
+        const [ax, ay] = X(pr.a), [bx, by] = X(pr.b), dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+        const t = L2 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / L2)) : 0;
+        const d = Math.hypot(ax + t * dx, ay + t * dy);
+        if (d < bd) { bd = d; bestCum = pr.from + t * (pr.to - pr.from); }
+      });
+      if (!pairs.length) nodes.forEach(n => { const d = distM(p, n.p); if (d < bd) { bd = d; bestCum = n.cum; } });
+      if (bestCum === null || bd > Math.max(50, sv.margin * 2)) return { p, w, seg: null, why: nSeg ? 'بعيدة عن المسار المفحوص' : 'لا يوجد مسار مفحوص' };
+      const seg = Math.min(nSeg - 1, Math.floor(bestCum / segL));
+      segPts[seg] += w; segObs[seg].push(p.name);
+      return { p, w, seg, why: '' };
+    });
+    const cls = v => v <= 0 ? 0 : v <= sv.t1 ? 1 : v <= sv.t2 ? 2 : 3;
+    const segs = segPts.map((v, i) => ({ i, pts: v, cls: cls(v), deg: v > sv.deg, obs: segObs[i] }));
+    const degN = segs.filter(x => x.deg).length;
+    const sumPts = segPts.reduce((a, b) => a + b, 0);
+    const cappedSum = segPts.reduce((a, b) => a + Math.min(b, sv.cap), 0);
+    const prev = nSeg ? degN / nSeg * 100 : null;
+    const sevIdx = nSeg ? cappedSum / (nSeg * sv.cap) * 100 : null;
+    // الخصم حسب جدول العقد (لا يساوي نسبة التدني تلقائياً)
+    let ded = null;
+    if (prev !== null && sv.ded.rows.length) {
+      const row = sv.ded.rows.find(r => prev >= num(r.from, -1) && prev <= num(r.to, -1));
+      const pct = row ? num(row.pct, 0) : 0, val = num(sv.ded.value, 0);
+      ded = { row, pct, amount: val ? val * pct / 100 : null };
+    }
+    // تباعد الصور: ملاحظات تبعد أكثر من 3 كم عن بعضها
+    let far = false;
+    for (let i = 0; i < counted.length && !far; i++) for (let j = i + 1; j < counted.length; j++) if (distM(counted[i], counted[j]) > 3000) { far = true; break; }
+    return { s, L: segL, pieces, pairs, dist, nSeg, segs, degN, sumPts, cappedSum, prev, sevIdx, ded, rows, all, counted,
+      merged: all.filter(p => p.obs.merged), outObs: rows.filter(r => r.seg === null), exits, far };
+  }
+  const svPct = v => v === null ? '—' : (Math.round(v * 100) / 100) + '%';
+
+  // ---- العرض ----
+  function svRender() {
+    svEl('svApprovedTag').hidden = !sv.approved;
+    svEl('svApprove').textContent = sv.approved ? '🔓 إلغاء الاعتماد' : '✅ اعتماد الجولة';
+    svEl('expLabel').hidden = !sv.on;
+    svEl('svBoundInfo').textContent = sv.boundary.length >= 3
+      ? `حدود الحي: ${sv.boundary.length} نقاط — الهامش ${sv.margin} م.` : (sv.drawing ? `جاري الرسم: ${sv.boundary.length} نقاط — اضغط على الخريطة لإضافة نقطة.` : 'لم تُرسم حدود — يُحسب المسار كاملاً.');
+    const r = svCompute();
+    svDrawMap(r);
+    const segBoxes = r.segs.map(x => `<span class="sv-c${x.cls}" title="قطاع ${x.i + 1}: ${x.pts} نقطة">${x.i + 1}</span>`).join('');
+    const ded = r.ded;
+    svEl('svResult').innerHTML = `
+      <h4>📊 نتيجة المسح الميداني${sv.info.district ? ' — ' + esc(sv.info.district) : ''}</h4>
+      <table>
+        <tr><td>المسافة المفحوصة فعلًا داخل الحي</td><td><b>${fmtNice(r.dist)}</b>${r.exits ? ` (خروج من الحي ${r.exits} مرة — لم تُحسب مسافاته)` : ''}</td></tr>
+        <tr><td>طول القطاع</td><td>${r.L} م</td></tr>
+        <tr><td>إجمالي القطاعات المفحوصة</td><td><b>${r.nSeg}</b>${r.nSeg ? ` (${Math.round(r.dist)} م ÷ ${r.L} م، مقرّبة للأعلى)` : ''}</td></tr>
+        <tr><td>عدد الملاحظات بعد حذف التكرار</td><td>${r.counted.length}${r.merged.length ? ` (+${r.merged.length} صور مدمجة كأدلة)` : ''}</td></tr>
+        <tr><td>ملاحظات غير محتسبة</td><td>${r.outObs.length ? r.outObs.map(o => `${o.p.name}: ${o.why}`).join('، ') : '—'}</td></tr>
+        <tr><td>مجموع نقاط الشدة</td><td>${r.sumPts} نقطة</td></tr>
+        <tr><td>القطاعات المتدنية (نقاطها &gt; ${sv.deg})</td><td><b>${r.degN}</b> من ${r.nSeg}</td></tr>
+      </table>
+      ${r.nSeg ? `<div class="sv-segs">${segBoxes}</div>
+      <div class="sv-note"><span class="sv-c0" style="display:inline-block;width:12px;height:12px;border-radius:3px"></span> نظيف
+        <span class="sv-c1" style="display:inline-block;width:12px;height:12px;border-radius:3px"></span> تدنٍ خفيف
+        <span class="sv-c2" style="display:inline-block;width:12px;height:12px;border-radius:3px"></span> تدنٍ متوسط
+        <span class="sv-c3" style="display:inline-block;width:12px;height:12px;border-radius:3px"></span> تدنٍ شديد</div>` : ''}
+      <div class="sv-big">
+        <div class="prev"><small>نسبة انتشار تدني النظافة</small><b>${svPct(r.prev)}</b>
+          <span class="eq">${r.nSeg ? `${r.degN} ÷ ${r.nSeg} × 100` : 'ابدأ تتبع الرحلة لحساب القطاعات'}</span></div>
+        <div class="sevi"><small>مؤشر شدة التدني</small><b>${svPct(r.sevIdx)}</b>
+          <span class="eq">${r.nSeg ? `${r.cappedSum} ÷ (${r.nSeg} × ${sv.cap}) × 100` : '—'}</span></div>
+      </div>
+      <div class="sv-ded-res">
+        <b>الخصم من المستخلص</b><br>
+        ${!sv.ded.rows.length ? 'لم يُدخل جدول خصم من العقد — لا يُحسب خصم.' :
+          `بند العقد: ${esc(sv.ded.clause || '—')}<br>
+           طريقة التحويل: نسبة انتشار التدني ${svPct(r.prev)} تقع في الشريحة ${ded && ded.row ? `${ded.row.from}% – ${ded.row.to}%` : '(لا توجد شريحة مطابقة)'}<br>
+           قيمة الخصم المقترحة: <b>${ded ? ded.pct + '%' : '—'}</b>${ded && ded.amount !== null ? ` = ${ded.amount.toLocaleString('en', { maximumFractionDigits: 2 })} ريال` : ''}`}
+      </div>
+      <div class="sv-warn">الاعتماد النهائي حسب صلاحية الجهة وشروط العقد. نسبة انتشار التدني ومؤشر الشدة نتيجتان مستقلتان، ولا تساوي أيٌّ منهما نسبة الخصم تلقائيًا.
+        القطاعات تُحسب من المسافة المفحوصة، لا من عدد نقاط GPS ولا من مساحة المضلع بين الصور.</div>
+      ${r.far ? '<div class="sv-warn">⚠️ توجد ملاحظات في مناطق متباعدة (أكثر من 3 كم). أنشئ جولة مستقلة لكل حي باستخدام «حفظ الجولة وبدء جولة جديدة».</div>' : ''}`;
+    // قائمة الملاحظات
+    svEl('svObsList').innerHTML = r.all.length ? `<h4>🧾 ملاحظات النفايات (${r.all.length})</h4><div class="sv-tbl-wrap"><table>
+      <tr><th>الصورة</th><th></th><th>النوع</th><th>الشدة</th><th>القطاع</th><th>الحالة</th><th>ملاحظات</th></tr>
+      ${r.all.map(p => { const row = r.rows.find(x => x.p === p);
+        return `<tr data-n="${p.name}"><td><b>${p.name}</b><br><small>${p.time}</small></td><td><img src="${p.img}" alt=""></td>
+          <td><select class="svo-type">${[...svEl('svObsType').options].map(o => `<option${o.value === p.obs.type ? ' selected' : ''}>${o.value}</option>`).join('')}</select></td>
+          <td><select class="svo-sev">${[1, 2, 3, 4].map(k => `<option value="${k}"${+p.obs.sev === k ? ' selected' : ''}>${SEV_LABEL[k]} (${sv.w[k]})</option>`).join('')}</select></td>
+          <td>${row && row.seg !== null ? row.seg + 1 : '—'}</td>
+          <td>${p.obs.merged ? `مدمجة مع ${p.obs.merged}` : (row && row.seg === null ? row.why : 'محتسبة')}</td>
+          <td><input class="svo-note" value="${esc(p.obs.note || '')}"></td></tr>`; }).join('')}
+      </table></div>` : (sv.on ? '<div class="sv-note">لا توجد ملاحظات بعد — التقط صورة النفايات وسجّل نوعها وشدتها.</div>' : '');
+    svEl('svObsList').querySelectorAll('tr[data-n]').forEach(tr => {
+      const p = points.find(q => q.name === tr.dataset.n);
+      const upd = (field, val, label) => {
+        const old = p.obs[field];
+        if (String(old) === String(val)) return;
+        if (!svGuard(`${label} للملاحظة ${p.name}`, String(field === 'sev' ? SEV_LABEL[old] : old), String(field === 'sev' ? SEV_LABEL[val] : val))) { svRender(); return; }
+        p.obs[field] = field === 'sev' ? +val : val; persist(); svRender();
+      };
+      tr.querySelector('.svo-type').onchange = e => upd('type', e.target.value, 'تعديل نوع المخالفة');
+      tr.querySelector('.svo-sev').onchange = e => upd('sev', e.target.value, 'تعديل درجة الشدة');
+      tr.querySelector('.svo-note').onchange = e => upd('note', e.target.value, 'تعديل ملاحظات المراقب');
+    });
+    // الجولات المحفوظة والملخص العام المرجّح
+    const all2 = [...sv.rounds, ...(r.nSeg ? [{ district: sv.info.district || '(الجولة الحالية)', nSeg: r.nSeg, degN: r.degN, prev: r.prev, sevIdx: r.sevIdx, dist: r.dist, current: true }] : [])];
+    const tSeg = all2.reduce((a, x) => a + x.nSeg, 0), tDeg = all2.reduce((a, x) => a + x.degN, 0);
+    svEl('svRounds').innerHTML = sv.rounds.length ? `<h4>🗂️ الجولات والملخص العام</h4><div class="sv-tbl-wrap"><table>
+      <tr><th>الحي</th><th>المسافة</th><th>القطاعات</th><th>المتدنية</th><th>الانتشار</th><th>الشدة</th></tr>
+      ${all2.map(x => `<tr><td>${esc(x.district || '—')}${x.current ? ' (حالية)' : ''}</td><td>${fmtNice(x.dist)}</td><td>${x.nSeg}</td><td>${x.degN}</td><td>${svPct(x.prev)}</td><td>${svPct(x.sevIdx)}</td></tr>`).join('')}
+      <tr><td colspan="2"><b>الملخص العام المرجّح</b></td><td><b>${tSeg}</b></td><td><b>${tDeg}</b></td><td colspan="2"><b>${tSeg ? svPct(tDeg / tSeg * 100) : '—'}</b> = ${tDeg} ÷ ${tSeg} × 100</td></tr>
+      </table></div>` : '';
+    svEl('svLog').innerHTML = sv.log.length ? `<h4>📝 سجل التعديلات بعد الاعتماد</h4><div class="sv-tbl-wrap"><table>
+      <tr><th>التاريخ</th><th>التعديل</th><th>من</th><th>إلى</th><th>السبب</th></tr>
+      ${sv.log.map(l => `<tr><td>${l.at}</td><td>${esc(l.what)}</td><td>${esc(l.from || '—')}</td><td>${esc(l.to || '—')}</td><td>${esc(l.reason)}</td></tr>`).join('')}</table></div>` : '';
+  }
+  const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const svSchedule = () => { if (!sv.on && !points.some(p => p.obs)) return; clearTimeout(svTimer); svTimer = setTimeout(svRender, 500); };
+
+  // تلوين القطاعات على الخريطة + حدود الحي
+  function svDrawMap(r) {
+    svLayer.clearLayers();
+    if (svBoundLayer) { map.removeLayer(svBoundLayer); svBoundLayer = null; }
+    if (sv.boundary.length) {
+      const ll = sv.boundary.map(p => [p.lat, p.lng]);
+      svBoundLayer = (sv.boundary.length >= 3 && !sv.drawing ? L.polygon(ll, { color: '#ef6c00', weight: 3, dashArray: '8 6', fillOpacity: 0.04 })
+        : L.polyline(ll, { color: '#ef6c00', weight: 3, dashArray: '8 6' })).addTo(map);
+      if (sv.drawing) sv.boundary.forEach(p => L.circleMarker([p.lat, p.lng], { radius: 5, color: '#ef6c00', fillOpacity: 1 }).addTo(svLayer));
+    }
+    if (!sv.on || !r.nSeg) return;
+    const colors = ['#2e7d32', '#f9a825', '#ef6c00', '#c62828'];
+    r.pairs.forEach(pr => {
+      const seg = Math.max(0, Math.min(r.nSeg - 1, Math.floor(((pr.from + pr.to) / 2) / r.L)));
+      L.polyline([[pr.a.lat, pr.a.lng], [pr.b.lat, pr.b.lng]], { color: colors[r.segs[seg].cls], weight: 6, opacity: 0.9, interactive: false }).addTo(svLayer);
+    });
+  }
+
+  // ---- سجل التعديل بعد الاعتماد ----
+  function svGuard(what, from, to) {
+    if (!sv.approved) return true;
+    const reason = prompt(`الجولة معتمدة.\n${what}\nاكتب سبب التعديل (سيُسجَّل في التقرير):`);
+    if (!reason || !reason.trim()) { alert('لم يُنفَّذ التعديل لأن السبب فارغ.'); return false; }
+    sv.log.push({ at: new Date().toLocaleString('ar-SA'), what, from: from || '', to: to || '', reason: reason.trim() });
+    svSave();
+    return true;
+  }
+
+  // ---- تسجيل ملاحظة نفايات بعد كل صورة ----
+  function svQueuePhoto(i) {
+    if (!sv.on) return;
+    svObsQueue.push(points[i]);
+    if (!svCurObs) svNextObs();
+  }
+  function svNextObs() {
+    svCurObs = svObsQueue.shift() || null;
+    if (!svCurObs) { svEl('svObsSheet').hidden = true; return; }
+    svEl('svObsName').textContent = svCurObs.name;
+    svEl('svObsImg').src = svCurObs.img;
+    svEl('svObsNote').value = '';
+    document.querySelector('input[name="svSev"][value="1"]').checked = true;
+    svEl('svObsSheet').hidden = false;
+  }
+  svEl('svObsSkip').onclick = () => { svNextObs(); };
+  svEl('svObsSave').onclick = async () => {
+    const p = svCurObs; if (!p) return;
+    p.obs = { type: svEl('svObsType').value, sev: +document.querySelector('input[name="svSev"]:checked').value,
+      note: svEl('svObsNote').value.trim(), merged: null, at: Date.now() };
+    await persist();
+    svEl('svObsSheet').hidden = true;
+    // منع التكرار: نفس النوع، أقل من 20 م، وخلال 15 دقيقة
+    const prev = points.find(q => q !== p && q.obs && !q.obs.merged && q.obs.type === p.obs.type && distM(q, p) < 20 && Math.abs((q.obs.at || 0) - p.obs.at) < 15 * 60000);
+    if (prev) {
+      svDupPending = { p, prev };
+      svEl('svDupText').textContent = `الصورة ${p.name} من نوع «${p.obs.type}» وتبعد ${fmtNice(distM(prev, p))} عن الملاحظة ${prev.name} وخلال مدة قصيرة.`;
+      svEl('svDupSheet').hidden = false;
+    } else { svRender(); svNextObs(); }
+  };
+  svEl('svDupMerge').onclick = async () => {
+    const d = svDupPending; svDupPending = null; svEl('svDupSheet').hidden = true;
+    if (d) { d.p.obs.merged = d.prev.name; await persist(); }   // تبقى دليلاً وتُحسب ملاحظة واحدة
+    svRender(); svNextObs();
+  };
+  svEl('svDupSeparate').onclick = () => { svDupPending = null; svEl('svDupSheet').hidden = true; svRender(); svNextObs(); };
+
+  // ---- رسم حدود الحي ----
+  map.on('click', e => {
+    if (!sv.drawing) return;
+    sv.boundary.push({ lat: e.latlng.lat, lng: e.latlng.lng });
+    svSave(); svRender();
+  });
+  function svSetDrawing(on) {
+    sv.drawing = on;
+    document.body.classList.toggle('sv-drawing', on);
+    svEl('svDraw').hidden = on; svEl('svDrawDone').hidden = !on; svEl('svDrawUndo').hidden = !on;
+    svSave(); svRender();
+    if (on) svEl('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  svEl('svDraw').onclick = () => {
+    if (sv.boundary.length && !svGuard('إعادة رسم حدود الحي')) return;
+    sv.boundary = []; svSetDrawing(true);
+  };
+  svEl('svDrawDone').onclick = () => {
+    if (sv.boundary.length < 3) { alert('حدود الحي تحتاج 3 نقاط على الأقل.'); return; }
+    svSetDrawing(false);
+    if (svBoundLayer) map.fitBounds(svBoundLayer.getBounds().pad(0.1));
+  };
+  svEl('svDrawUndo').onclick = () => { sv.boundary.pop(); svSave(); svRender(); };
+  svEl('svBoundClear').onclick = () => {
+    if (!sv.boundary.length || !svGuard('مسح حدود الحي')) return;
+    sv.boundary = []; svSetDrawing(false);
+  };
+
+  // ---- الحقول والإعدادات ----
+  const SV_FIELDS = { svDistrict: 'district', svContractor: 'contractor', svContract: 'contract', svInspector: 'inspector', svStart: 'start', svEnd: 'end', svKind: 'kind' };
+  Object.entries(SV_FIELDS).forEach(([id, k]) => svEl(id).addEventListener('change', e => {
+    if (!svGuard(`تعديل «${e.target.closest('label').firstChild.textContent.trim()}»`, sv.info[k], e.target.value)) { e.target.value = sv.info[k]; return; }
+    sv.info[k] = e.target.value; svSave(); svRender();
+  }));
+  document.querySelectorAll('.sv-now').forEach(b => b.onclick = () => { const i = svEl(b.dataset.for); i.value = nowLocal(); i.dispatchEvent(new Event('change')); });
+  const SV_NUMS = { svSegLen: 'segLen', svMargin: 'margin', svT1: 't1', svT2: 't2', svDeg: 'deg', svCap: 'cap' };
+  Object.entries(SV_NUMS).forEach(([id, k]) => svEl(id).addEventListener('change', e => {
+    const v = num(e.target.value, sv[k]);
+    if (!svGuard(`تعديل إعداد الحساب (${k})`, sv[k], v)) { e.target.value = sv[k]; return; }
+    sv[k] = v; svSave(); svRender();
+  }));
+  [1, 2, 3, 4].forEach(k => svEl('svW' + k).addEventListener('change', e => {
+    const v = num(e.target.value, sv.w[k]);
+    if (!svGuard(`تعديل وزن الشدة «${SEV_LABEL[k]}»`, sv.w[k], v)) { e.target.value = sv.w[k]; return; }
+    sv.w[k] = v; svSave(); svRender();
+  }));
+  ['svClause', 'svValue'].forEach(id => svEl(id).addEventListener('change', e => {
+    const k = id === 'svClause' ? 'clause' : 'value';
+    if (!svGuard('تعديل بيانات الخصم', sv.ded[k], e.target.value)) { e.target.value = sv.ded[k]; return; }
+    sv.ded[k] = e.target.value; svSave(); svRender();
+  }));
+  function svRenderDed() {
+    svEl('svDedRows').innerHTML = sv.ded.rows.map((r, i) => `<tr data-i="${i}">
+      <td><input class="d-from" inputmode="decimal" value="${esc(r.from)}"></td><td><input class="d-to" inputmode="decimal" value="${esc(r.to)}"></td><td><input class="d-pct" inputmode="decimal" value="${esc(r.pct)}"></td></tr>`).join('');
+    svEl('svDedRows').querySelectorAll('tr').forEach(tr => tr.querySelectorAll('input').forEach(inp => inp.onchange = () => {
+      const r = sv.ded.rows[+tr.dataset.i], k = inp.className.slice(2);
+      if (!svGuard('تعديل شريحة الخصم', r[k], inp.value)) { inp.value = r[k]; return; }
+      r[k] = inp.value; svSave(); svRender();
+    }));
+  }
+  svEl('svDedAdd').onclick = () => {
+    if (!svGuard('إضافة شريحة خصم')) return;
+    const last = sv.ded.rows[sv.ded.rows.length - 1];
+    sv.ded.rows.push({ from: last ? last.to : '0', to: '', pct: '' }); svSave(); svRenderDed(); svRender();
+  };
+  svEl('svDedDel').onclick = () => { if (!sv.ded.rows.length || !svGuard('حذف شريحة خصم')) return; sv.ded.rows.pop(); svSave(); svRenderDed(); svRender(); };
+
+  function svFillForm() {
+    Object.entries(SV_FIELDS).forEach(([id, k]) => svEl(id).value = sv.info[k] || (k === 'kind' ? 'car' : ''));
+    Object.entries(SV_NUMS).forEach(([id, k]) => svEl(id).value = sv[k]);
+    [1, 2, 3, 4].forEach(k => svEl('svW' + k).value = sv.w[k]);
+    svEl('svClause').value = sv.ded.clause; svEl('svValue').value = sv.ded.value;
+    svEl('svOn').checked = sv.on;
+    svRenderDed();
+    svEl('svDraw').hidden = sv.drawing; svEl('svDrawDone').hidden = !sv.drawing; svEl('svDrawUndo').hidden = !sv.drawing;
+    document.body.classList.toggle('sv-drawing', sv.drawing);
+  }
+
+  svEl('svBtn').onclick = () => { svEl('svCard').hidden = !svEl('svCard').hidden; if (!svEl('svCard').hidden) svRender(); };
+  svEl('svClose').onclick = () => { svEl('svCard').hidden = true; };
+  svEl('svOn').onchange = e => {
+    sv.on = e.target.checked;
+    if (sv.on && !sv.info.start) { sv.info.start = nowLocal(); svEl('svStart').value = sv.info.start; }
+    svSave(); svRender();
+  };
+  svEl('svApprove').onclick = () => {
+    if (!sv.approved) {
+      if (!confirm('اعتماد الجولة؟ بعد الاعتماد لا يُسمح بتعديل صورة أو إحداثية أو درجة شدة إلا مع كتابة السبب وتسجيله.')) return;
+      if (!sv.info.end) { sv.info.end = nowLocal(); svEl('svEnd').value = sv.info.end; }
+      sv.approved = true; sv.approvedAt = new Date().toLocaleString('ar-SA');
+      sv.log.push({ at: sv.approvedAt, what: 'اعتماد الجولة', from: '', to: '', reason: '—' });
+    } else {
+      if (!svGuard('إلغاء اعتماد الجولة')) return;
+      sv.approved = false;
+    }
+    svSave(); svRender();
+  };
+  svEl('svNewRound').onclick = () => {
+    const r = svCompute();
+    if (!confirm('حفظ نتيجة الجولة الحالية في قائمة الجولات وبدء جولة جديدة؟\n(الصور والمسار لا تُحذف تلقائياً؛ امسحها إذا كانت الجولة الجديدة في حي آخر)')) return;
+    sv.rounds.push({ district: sv.info.district, contractor: sv.info.contractor, start: sv.info.start, end: sv.info.end || nowLocal(),
+      dist: r.dist, nSeg: r.nSeg, degN: r.degN, prev: r.prev, sevIdx: r.sevIdx, nObs: r.counted.length, sumPts: r.sumPts, at: new Date().toLocaleString('ar-SA') });
+    // الملاحظات المحتسبة في الجولة المحفوظة لا تُحسب مرة أخرى
+    points.forEach(p => { if (p.obs) p.obs.round = sv.rounds.length; });
+    points.forEach(p => { if (p.obs && p.obs.round) { p.obsArchived = p.obs; delete p.obs; } });
+    persist();
+    sv.info = { ...sv.info, district: '', start: nowLocal(), end: '' };
+    sv.boundary = []; sv.approved = false; sv.log = [];
+    svSave(); svFillForm(); svRender();
+  };
+
+  async function svRestore() {
+    const d = await DB.load('survey', null);
+    if (d && typeof d === 'object') {
+      Object.assign(sv, d);
+      sv.info = { ...{ district: '', contractor: '', contract: '', inspector: '', start: '', end: '', kind: 'car' }, ...(d.info || {}) };
+      sv.w = { 1: 1, 2: 2, 3: 3, 4: 5, ...(d.w || {}) };
+      sv.ded = { clause: '', value: '', rows: [], ...(d.ded || {}) };
+      sv.boundary = Array.isArray(d.boundary) ? d.boundary : [];
+      sv.log = Array.isArray(d.log) ? d.log : []; sv.rounds = Array.isArray(d.rounds) ? d.rounds : [];
+    }
+    svFillForm();
+    if (sv.on || points.some(p => p.obs) || sv.boundary.length) svRender();
   }
 
   // ===== أزرار الاختيار =====
@@ -1884,6 +2574,7 @@
       (p.src === 'ocr' ? `(من نص الصورة: ${ll(p)})` : p.src === 'exif' ? '(الموقع من داخل الصورة)' : `(دقة ±${p.acc} م)`) +
       (watchId === null ? ' — تنبيه: تتبع المشي متوقف، فلن تُحسب المسافة الممشاة.' : '');
     onNewPhoto(points.length - 1);
+    svQueuePhoto(points.length - 1);   // مسح النظافة: تسجيل نوع وشدة الملاحظة (عند تشغيل الوضع فقط)
     if (autoPick.checked && !opt.noPick) startPick(points.length - 1);
   }
   const SRC_TAG = { ocr: '📝 من نص الصورة', exif: '📷 من الصورة', edit: '✏️ معدّلة يدوياً' };
@@ -1892,12 +2583,15 @@
   // تعديل إحداثيات الصورة يدوياً (لتصحيح أي قراءة خاطئة)
   async function editCoords(i) {
     const p = points[i];
+    const before = ll(p);
+    if (p.obs && sv.approved && !svGuard(`تعديل إحداثية الصورة ${p.name}`, before, '(تُكتب بعد الإدخال)')) return;
     const v = prompt(`إحداثيات النقطة ${p.name} (خط العرض، خط الطول):`, ll(p).replace(',', ''));
     if (v === null) return;
     const c = parseCoords(v.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
     const m = c || (() => { const n = v.match(/-?\d+(\.\d+)?/g); return n && n.length >= 2 && Math.abs(+n[0]) <= 90 && Math.abs(+n[1]) <= 180 ? { lat: +n[0], lng: +n[1], latText: n[0], lngText: n[1] } : null; })();
     if (!m) { alert('اكتب الإحداثيتين بهذا الشكل: 21.2457513 40.36679293'); return; }
     p.lat = m.lat; p.lng = m.lng; p.latText = m.latText; p.lngText = m.lngText; p.src = 'edit'; p.acc = null;
+    if (p.obs && sv.approved && sv.log.length) { sv.log[sv.log.length - 1].to = ll(p); svSave(); }
     redraw(); await persist();
     statusEl.textContent = `تم تعديل إحداثيات النقطة ${p.name} ✔`;
   }
@@ -2041,6 +2735,7 @@
     updateSummary();
     fillCenters();
     arRefresh(false);   // تحديث نسب الصور فور إضافة أو حذف أو تحديد صورة
+    svSchedule();
   }
 
   // تفصيل الجمع لعرضه تحت الرقم، مثل: A 33.2 + B 42.8
@@ -2076,6 +2771,8 @@
     ap.classList.toggle('msg', !ar || ar.pct == null);
     const pr = photoDistRatio(), pe2 = document.getElementById('sPdPct');
     pe2.textContent = pr.text; pe2.classList.toggle('msg', !pr.ok);
+    const sg = document.getElementById('sGpsPct');
+    if (calcMethod === 'points') { const g = gpsPointsRatio(); sg.textContent = g.text; sg.classList.toggle('msg', !g.ok); }
   }
 
   function resizeImage(file, maxSize) {
@@ -2122,6 +2819,7 @@
     const all = [...photoCoords(), ...pickedCoords(), ...track];
     all.push(...fs.pts);
     if (ar) all.push(...ar.pts);
+    if (sv.on && sv.boundary.length >= 3) all.push(...sv.boundary);
     if (!all.length) return null;
     const circ = circleLayer && circleState.center ? circleState : null;
     if (circ) {
@@ -2189,6 +2887,23 @@
       };
       lbl(ar.pts[0], 'START', '#fff', '#000', -42);
       lbl(ar.pts[ar.pts.length - 1], 'END', '#000', '#fff', 14);
+    }
+
+    // مسح النظافة: حدود الحي (برتقالي متقطع) وتلوين القطاعات حسب حالتها
+    if (sv.on) {
+      if (sv.boundary.length >= 3) {
+        drawPath(ctx, sv.boundary.map(toPx), true);
+        ctx.fillStyle = 'rgba(239,108,0,.06)'; ctx.fill();
+        ctx.setLineDash([14, 10]); ctx.strokeStyle = '#ef6c00'; ctx.lineWidth = 5; ctx.stroke(); ctx.setLineDash([]);
+      }
+      const sr = svCompute(), cols = ['#2e7d32', '#f9a825', '#ef6c00', '#c62828'];
+      sr.pairs.forEach(pr => {
+        if (!sr.nSeg) return;
+        const seg = Math.max(0, Math.min(sr.nSeg - 1, Math.floor(((pr.from + pr.to) / 2) / sr.L)));
+        const [x1, y1] = toPx(pr.a), [x2, y2] = toPx(pr.b);
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+        ctx.strokeStyle = cols[sr.segs[seg].cls]; ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.stroke();
+      });
     }
 
     // المحيط الميداني (أزرق للمشي، أخضر للسيارة)
@@ -2317,6 +3032,11 @@
           <div>مجموع عمود «المسافة بينهما»<b>${r.pc.n ? r.pc.sum.toFixed(1) + ' م' : '—'}</b>عدد الصور المحددة: ${r.pc.n ? photoCountAr(r.pc.n) : '—'}</div>
           <div class="p">نسبة مسافات الصور من المسافة المقطوعة<b style="${r.ok ? '' : 'font-size:11px;color:#a33'}">${r.text}</b>مجموع العمود ÷ المسافة المقطوعة × 100</div>
         </div>`; })() : ''}
+        ${calcMethod === 'points' && pdShown ? (() => { const g = gpsPointsRatio(); return `<div class="sumrow">
+          <div>إجمالي نقاط GPS المقبولة<b>${g.total}</b>المسافة المقطوعة: ${fmtNice(g.route)} — المستبعدة: ${g.excluded}</div>
+          <div>المطابقة / غير المطابقة<b>${g.matched} / ${g.unmatched}</b>مسافة السماحية: ${g.tol} م</div>
+          <div class="p">نسبة نقاط GPS المطابقة<b style="${g.ok ? '' : 'font-size:11px;color:#a33'}">${g.text}</b>${g.ok ? g.matched + ' ÷ ' + g.total + ' × 100' : ''}</div>
+        </div>`; })() : ''}
         ${ar ? `<div class="sumrow">
           <div>المسافة المقطوعة / المحيط بعد الإغلاق<b>${fmtLenC(ar.dist)}</b>المحيط بعد الإغلاق: ${fmtLenC(ar.routePerim)}</div>
           <div>المساحة الإجمالية للمسار<b>${fmtAreaAR(ar.routeArea)}</b>مساحة المضلع بين مواقع الصور الأصلية${ar.img && ar.img.names && ar.img.area != null ? ' (' + ar.img.names.join('→') + '→' + ar.img.names[0] + ')' : ''}: ${ar.img && ar.img.area != null ? fmtAreaAR(ar.img.area) : '—'} — محيطها: ${ar.img && ar.img.perim != null ? fmtLenC(ar.img.perim) : '—'}</div>
@@ -2328,11 +3048,57 @@
           <div class="p">مساحة الشكل المغلق<b>${fs.result ? Math.round(fs.result.area).toLocaleString('en') + ' م²' : '—'}</b>${fs.result ? (fs.result.area / 1e6).toLocaleString('en', { maximumFractionDigits: 4 }) + ' كم² — ' + (fs.result.area / 1e4).toLocaleString('en', { maximumFractionDigits: 3 }) + ' هكتار' : ''}</div>
         </div>` : ''}
         <div class="shape">${mapImg ? `<img src="${mapImg}" style="width:100%;border-radius:6px;border:1px solid #ccd">` : ''}
-          <div class="legend"><span style="background:#3b3bff"></span>إحداثيات الصور<span style="background:#ef6c00"></span>الإحداثيات المحددة<span style="background:#00e676"></span>مسار المشي${fs.pts.length ? `<span style="background:${FS_STYLE[fs.type].color}"></span>المحيط الميداني` : ''}${circleLayer ? '<span style="background:#8e24aa"></span>المحيط حول M' : ''}</div>
+          <div class="legend"><span style="background:#3b3bff"></span>إحداثيات الصور<span style="background:#ef6c00"></span>الإحداثيات المحددة<span style="background:#00e676"></span>مسار المشي${fs.pts.length ? `<span style="background:${FS_STYLE[fs.type].color}"></span>المحيط الميداني` : ''}${circleLayer ? '<span style="background:#8e24aa"></span>المحيط حول M' : ''}${sv.on && sv.boundary.length >= 3 ? '<span style="background:#ef6c00"></span>حدود الحي' : ''}${sv.on ? '<span style="background:#2e7d32"></span>قطاع نظيف<span style="background:#c62828"></span>قطاع متدنٍ' : ''}</div>
         </div>
         <table>${head}<tbody>${points.slice(0, firstRows).map(row).join('')}</tbody></table>`);
       for (let i = firstRows; i < points.length; i += nextRows)
         pages.push(`<table>${head}<tbody>${points.slice(i, i + nextRows).map(row).join('')}</tbody></table>`);
+
+      // ===== صفحات تقرير مسح النظافة (عند تشغيل الوضع أو وجود ملاحظات) =====
+      if (sv.on || points.some(p => p.obs)) {
+        const r = svCompute(), I = sv.info;
+        const dedHtml = !sv.ded.rows.length ? 'لم يُدخل جدول خصم من العقد — لا يُحسب خصم.'
+          : `بند العقد: ${esc(sv.ded.clause || '—')}<br>طريقة التحويل: نسبة الانتشار ${svPct(r.prev)} ضمن الشريحة ${r.ded && r.ded.row ? r.ded.row.from + '% – ' + r.ded.row.to + '%' : '(لا توجد شريحة مطابقة)'}<br>
+             الشرائح: ${sv.ded.rows.map(x => `${x.from}–${x.to}% ← ${x.pct}%`).join('، ')}<br>
+             قيمة الخصم المقترحة: <b>${r.ded ? r.ded.pct + '%' : '—'}</b>${r.ded && r.ded.amount !== null ? ' = ' + r.ded.amount.toLocaleString('en', { maximumFractionDigits: 2 }) + ' ريال' : ''}`;
+        pages.push(`
+          <h2>تقرير المسح الميداني لمستوى النظافة</h2>
+          <div class="meta">${sv.approved ? '🔒 جولة معتمدة بتاريخ ' + sv.approvedAt : 'جولة غير معتمدة'}</div>
+          <table>
+            <tr><th>الحي</th><td>${esc(I.district || '—')}</td><th>المقاول</th><td>${esc(I.contractor || '—')}</td></tr>
+            <tr><th>رقم العقد/المشروع</th><td>${esc(I.contract || '—')}</td><th>المراقب</th><td>${esc(I.inspector || '—')}</td></tr>
+            <tr><th>بداية الجولة</th><td>${fmtDT(I.start)}</td><th>نهاية الجولة</th><td>${fmtDT(I.end)}</td></tr>
+            <tr><th>نوع الجولة</th><td>${I.kind === 'walk' ? 'مشي' : 'سيارة'}</td><th>طول القطاع</th><td>${r.L} م</td></tr>
+          </table>
+          <div class="sumrow" style="margin-top:10px">
+            <div>المسافة المفحوصة فعلًا<b>${fmtNice(r.dist)}</b>داخل حدود الحي${sv.boundary.length >= 3 ? ' (هامش ' + sv.margin + ' م)' : ' (بدون حدود مرسومة)'}</div>
+            <div>إجمالي القطاعات<b>${r.nSeg}</b>المتدنية: ${r.degN} (نقاطها &gt; ${sv.deg})</div>
+            <div>الملاحظات بعد حذف التكرار<b>${r.counted.length}</b>مجموع نقاط الشدة: ${r.sumPts}${r.merged.length ? ' — مدمجة: ' + r.merged.length : ''}</div>
+          </div>
+          <div class="sumrow">
+            <div class="p">نسبة انتشار تدني النظافة<b>${svPct(r.prev)}</b>${r.nSeg ? r.degN + ' ÷ ' + r.nSeg + ' × 100' : ''}</div>
+            <div class="p">مؤشر شدة التدني<b>${svPct(r.sevIdx)}</b>${r.nSeg ? r.cappedSum + ' ÷ (' + r.nSeg + ' × ' + sv.cap + ') × 100' : ''}</div>
+            <div>أوزان الشدة<b style="font-size:13px">${[1, 2, 3, 4].map(k => SEV_LABEL[k] + ' ' + sv.w[k]).join(' — ')}</b>التصنيف: ≤${sv.t1} خفيف، ≤${sv.t2} متوسط، أكثر شديد</div>
+          </div>
+          <div style="border:1px solid #ccd;border-radius:6px;padding:8px;font-size:12px;line-height:1.8;margin-bottom:8px"><b>الخصم من المستخلص:</b><br>${dedHtml}</div>
+          <div style="background:#fff8e1;border-radius:6px;padding:8px;font-size:12px;line-height:1.7">الاعتماد النهائي حسب صلاحية الجهة وشروط العقد. القطاعات تُحسب من المسافة المفحوصة، لا من عدد نقاط GPS ولا من مساحة المضلع بين الصور.</div>
+          ${sv.rounds.length ? `<h3 style="margin:10px 0 4px;font-size:14px">الجولات والملخص العام المرجّح</h3><table><tr><th>الحي</th><th>المسافة</th><th>القطاعات</th><th>المتدنية</th><th>الانتشار</th></tr>
+            ${sv.rounds.map(x => `<tr><td>${esc(x.district || '—')}</td><td>${fmtNice(x.dist)}</td><td>${x.nSeg}</td><td>${x.degN}</td><td>${svPct(x.prev)}</td></tr>`).join('')}
+            <tr><td>الحالية</td><td>${fmtNice(r.dist)}</td><td>${r.nSeg}</td><td>${r.degN}</td><td>${svPct(r.prev)}</td></tr>
+            <tr><th colspan="2">الملخص العام</th><th>${sv.rounds.reduce((a, x) => a + x.nSeg, 0) + r.nSeg}</th><th>${sv.rounds.reduce((a, x) => a + x.degN, 0) + r.degN}</th>
+              <th>${(() => { const n = sv.rounds.reduce((a, x) => a + x.nSeg, 0) + r.nSeg, d = sv.rounds.reduce((a, x) => a + x.degN, 0) + r.degN; return n ? svPct(d / n * 100) : '—'; })()}</th></tr></table>` : ''}`);
+        // جدول القطاعات
+        const segRows = r.segs.map(x => `<tr><td>${x.i + 1}</td><td>${x.i * r.L}–${Math.min((x.i + 1) * r.L, Math.round(r.dist))} م</td><td>${x.pts}</td><td>${SEG_CLASS[x.cls]}</td><td>${x.deg ? 'متدنٍ' : '—'}</td><td>${x.obs.join('، ') || '—'}</td></tr>`);
+        const segHead = '<tr><th>القطاع</th><th>المدى</th><th>النقاط</th><th>الحالة</th><th>متدني</th><th>الملاحظات</th></tr>';
+        for (let i = 0; i < segRows.length; i += 30) pages.push(`<h2>جدول القطاعات (${i + 1}–${Math.min(i + 30, segRows.length)} من ${segRows.length})</h2><table>${segHead}${segRows.slice(i, i + 30).join('')}</table>`);
+        // الملاحظات والمدمجة وسجل التعديل
+        const obsRows = r.all.map(p => { const rw = r.rows.find(x => x.p === p);
+          return `<tr><td><b>${p.name}</b></td><td><img src="${p.img}" style="width:70px;height:52px;object-fit:cover"></td><td dir="ltr">${ll(p)}</td><td>${p.time}</td><td>${esc(p.obs.type)}</td><td>${SEV_LABEL[p.obs.sev]} (${sv.w[p.obs.sev]})</td><td>${rw && rw.seg !== null ? rw.seg + 1 : '—'}</td><td>${p.obs.merged ? 'مدمجة مع ' + p.obs.merged : (rw && rw.seg === null ? rw.why : 'محتسبة')}</td><td>${esc(p.obs.note || '')}</td></tr>`; });
+        const obsHead = '<tr><th>الصورة</th><th></th><th>الإحداثية</th><th>الوقت</th><th>النوع</th><th>الشدة</th><th>القطاع</th><th>الحالة</th><th>ملاحظات</th></tr>';
+        for (let i = 0; i < obsRows.length; i += 9) pages.push(`<h2>صور المخالفات (${i + 1}–${Math.min(i + 9, obsRows.length)} من ${obsRows.length})</h2><table style="font-size:11px">${obsHead}${obsRows.slice(i, i + 9).join('')}</table>`);
+        if (sv.log.length) pages.push(`<h2>سجل التعديلات بعد الاعتماد</h2><table><tr><th>التاريخ</th><th>التعديل</th><th>من</th><th>إلى</th><th>السبب</th></tr>
+          ${sv.log.map(l => `<tr><td>${l.at}</td><td>${esc(l.what)}</td><td>${esc(l.from || '—')}</td><td>${esc(l.to || '—')}</td><td>${esc(l.reason)}</td></tr>`).join('')}</table>`);
+      }
 
       const perPage = 20, totalPhotoPages = Math.ceil(points.length / perPage);
       for (let i = 0; i < points.length; i += perPage) {
@@ -2377,6 +3143,7 @@
     if (!points.length) return;
     stopPick();
     const last = points[points.length - 1];
+    if (!last.pick && last.obs && sv.approved && !svGuard(`حذف صورة الملاحظة ${last.name}`, last.obs.type + ' — ' + SEV_LABEL[last.obs.sev], 'محذوفة')) return;
     if (last.pick) last.pick = null; else points.pop();
     redraw(); await persist();
     statusEl.textContent = 'تم التراجع عن آخر خطوة.';
@@ -2384,13 +3151,15 @@
 
   document.getElementById('clearBtn').onclick = async () => {
     if ((!points.length && !track.length) || !confirm('مسح جميع النقاط والصور ومسار المشي نهائياً؟')) return;
+    if (points.some(p => p.obs) && sv.approved && !svGuard('مسح جميع الصور والملاحظات', points.filter(p => p.obs).length + ' ملاحظة', 'محذوفة')) return;
     stopPick();
     stopTrack();
-    points = []; track = []; rejected = 0;
+    points = []; track = []; rejected = 0; trackBad = [];
     trackLine.setLatLngs([]);
     trackBtn.textContent = '🚶 بدء تتبع المشي';
     redraw(); await persist(); await persistTrack();
     updateTrackInfo();
+    arClearRoute('walk');
     statusEl.textContent = 'تم المسح.';
   };
 
@@ -2400,6 +3169,7 @@
   (async () => {
     const st = await DB.load('track', { track: [], rejected: 0 });
     track = Array.isArray(st.track) ? st.track : [];
+    trackBad = Array.isArray(st.bad) ? st.bad : [];
     rejected = st.rejected || 0;
     trackLine.setLatLngs(track.map(c => [c.lat, c.lng]));
     if (track.length) trackBtn.textContent = '🚶 متابعة تتبع المشي';
@@ -2413,6 +3183,7 @@
     }
     await fsRestore();
     await arRestore();
+    await svRestore();
     // استرجاع وضع الحساب (محيط مُدخل أو تتبع المشي)
     const savedPerim = getSetting('pm_perim', '');
     if (savedPerim) { perimInput.value = savedPerim; await applyPerimeter(); } else updateModeUI();

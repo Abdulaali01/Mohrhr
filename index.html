@@ -92,6 +92,12 @@
   .fs-near-btns button { flex: 1; padding: 14px; font-size: 16px; }
   #fsNearClose { background: #2e7d32; color: #fff; }
   #fsNearLater { background: #eee; color: #333; }
+  #northBtn { background: #37474f; color: #fff; }
+  .north-badge { background: #fff; color: #b71c1c; width: 34px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font: 800 15px/1.05 Arial, sans-serif; cursor: pointer; direction: ltr; user-select: none; }
+  .north-badge span:last-child { color: #111; font-size: 17px; }
+  .fs-me-wrap { position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; }
+  .fs-dir { position: absolute; inset: 0; pointer-events: none; }
   .fs-me { width: 38px; height: 38px; border-radius: 50%; background: #1565c0; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,.5);
     display: flex; align-items: center; justify-content: center; font-size: 22px; }
   .fs-start { background: #fff; border: 3px solid #000; border-radius: 8px; font-size: 12px; font-weight: bold; padding: 2px 4px; white-space: nowrap;
@@ -285,6 +291,7 @@
   <button id="clearBtn">مسح</button>
   <button id="circleBtn">⭕ المحيط</button>
   <button id="fieldBtn">🗺️ محيط ميداني</button>
+  <button id="northBtn">🧭 إعادة توجيه الخريطة للشمال</button>
 </div>
 
 <div class="options">
@@ -489,7 +496,7 @@
     target: 0, type: 'walk', accLimit: 20, closeR: 20,
     pts: [], dist: 0, rejected: 0, jumps: 0,
     state: 'idle',            // idle | tracking | paused | closed
-    watch: null, alert90: false, leftStart: false, nearShown: false, lastAcc: null, result: null
+    watch: null, alert90: false, leftStart: false, nearShown: false, lastAcc: null, result: null, lastHeading: NaN
   };
 
   // ===== الإعدادات =====
@@ -624,6 +631,30 @@
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 20, maxNativeZoom: 19
   }).addTo(map);
+  // ===== بوصلة: الشمال دائماً لأعلى الشاشة =====
+  // لا يُطبَّق أي rotate على #map أو طبقات Leaflet. هذه الدالة تزيل أي دوران قد تضيفه إضافة خارجية أو المتصفح،
+  // وتُبقي مستوى التكبير والموقع كما هما.
+  function resetNorth() {
+    const c = map.getCenter(), z = map.getZoom();
+    const els = [document.getElementById('map'), ...document.querySelectorAll('#map .leaflet-map-pane, #map .leaflet-tile-pane, #map .leaflet-container')];
+    let changed = false;
+    els.forEach(el => { if (el && /rotate/.test(el.style.transform || '')) { el.style.transform = el.style.transform.replace(/rotate\([^)]*\)/g, '').trim(); changed = true; } });
+    if (typeof map.setBearing === 'function') map.setBearing(0);
+    if (changed) { map.invalidateSize({ pan: false }); map.setView(c, z, { animate: false }); }
+  }
+  const NorthControl = L.Control.extend({
+    options: { position: 'topleft' },
+    onAdd() {
+      const d = L.DomUtil.create('div', 'north-badge leaflet-bar');
+      d.innerHTML = '<span>N</span><span>↑</span>';
+      d.title = 'الشمال لأعلى — اضغط لإعادة توجيه الخريطة للشمال';
+      L.DomEvent.disableClickPropagation(d);
+      d.onclick = resetNorth;
+      return d;
+    }
+  });
+  map.addControl(new NorthControl());
+
   const shape = L.polygon([], { color: '#3b3bff', weight: 6, fillColor: '#3b3bff', fillOpacity: 0.12 }).addTo(map);
   const line = L.polyline([], { color: '#3b3bff', weight: 6 }).addTo(map);
   const pickShape = L.polygon([], { color: '#ef6c00', weight: 4, dashArray: '10 8', fillColor: '#ef6c00', fillOpacity: 0.18 }).addTo(map);
@@ -948,10 +979,14 @@
   }
   fsEl('fsToast').onclick = () => fsEl('fsToast').classList.remove('show');
 
-  // علامة الموقع الحالي: شخص يمشي، أو سيارة تتجه حسب الحركة
+  // علامة الموقع الحالي: شخص يمشي مع سهم الاتجاه، أو سيارة تتجه حسب الحركة.
+  // الخريطة لا تُدوَّر أبداً (الشمال دائماً للأعلى) — يُدوَّر الرمز وحده.
+  // رسم الرمزين مقدمته للأعلى (الشمال)، لذلك الإزاحة 0. لو كانت أيقونة متجهة للأسفل تصبح الإزاحة 180.
+  const ICON_OFFSET = 0;
+  const iconRotation = heading => ((isFinite(heading) ? heading : 0) + ICON_OFFSET + 360) % 360;
   function fsMeIcon(heading) {
+    const h = iconRotation(isFinite(heading) ? heading : fs.lastHeading);
     if (fs.type === 'car') {
-      const h = isFinite(heading) ? heading : 0;
       return L.divIcon({ className: '', iconSize: [40, 40], iconAnchor: [20, 20], html:
         `<svg width="40" height="40" viewBox="0 0 40 40"><g transform="rotate(${h} 20 20)">
           <rect x="12" y="4" width="16" height="32" rx="6" fill="#2e7d32" stroke="#fff" stroke-width="2.5"/>
@@ -959,7 +994,10 @@
           <rect x="14.5" y="26" width="11" height="5" rx="2" fill="#a5d6a7"/>
           <path d="M20 0 L24 5 L16 5 Z" fill="#1b5e20"/></g></svg>` });
     }
-    return L.divIcon({ className: '', iconSize: [38, 38], iconAnchor: [19, 19], html: '<div class="fs-me">🚶</div>' });
+    // المشي: الشخص ثابت، والسهم الأزرق حوله يشير لاتجاه السير
+    const arrow = isFinite(heading) || isFinite(fs.lastHeading)
+      ? `<svg class="fs-dir" width="56" height="56" viewBox="0 0 56 56"><g transform="rotate(${h} 28 28)"><path d="M28 1 L36 13 L28 10 L20 13 Z" fill="#0d47a1" stroke="#fff" stroke-width="1.5"/></g></svg>` : '';
+    return L.divIcon({ className: '', iconSize: [56, 56], iconAnchor: [28, 28], html: `<div class="fs-me-wrap">${arrow}<div class="fs-me">🚶</div></div>` });
   }
   function fsUpdateMe(lat, lng, acc, heading) {
     const ll2 = [lat, lng];
@@ -988,7 +1026,8 @@
       fsPoly = L.polygon(fs.pts.map(p => [p.lat, p.lng]), { color: st.color, weight: 3, fillColor: st.fill, fillOpacity: 0.25 }).addTo(map);
     }
     fsDrawStart();
-    if (fsMe) fsMe.setIcon(fsMeIcon(fs.pts.length >= 2 ? bearing(fs.pts[fs.pts.length - 2], fs.pts[fs.pts.length - 1]) : 0));
+    if (fs.pts.length >= 2 && !isFinite(fs.lastHeading)) fs.lastHeading = bearing(fs.pts[fs.pts.length - 2], fs.pts[fs.pts.length - 1]);
+    if (fsMe) fsMe.setIcon(fsMeIcon(fs.lastHeading));
   }
 
   function fsUpdateUI() {
@@ -1067,13 +1106,17 @@
       const d = distM(last, pt);
       const dt = Math.max(1, (pt.t - last.t) / 1000);
       if (d / dt > st.maxSpeed) { fs.jumps++; fsUpdateUI(); return; }              // قفزة غير طبيعية
-      if (heading === null) heading = bearing(last, pt);
-      fsUpdateMe(pt.lat, pt.lng, c.accuracy, heading);
+      // الاتجاه من حركة حقيقية فقط؛ اهتزاز GPS أثناء الوقوف لا يغيّر اتجاه الرمز
+      if (heading === null && d >= st.minStep) heading = bearing(last, pt);
+      if (heading !== null) fs.lastHeading = heading;
+      fsUpdateMe(pt.lat, pt.lng, c.accuracy, fs.lastHeading);
       if (d < st.minStep) { fsUpdateUI(); return; }                                // نقطة قريبة جداً (اهتزاز)
       fs.dist += d;
     } else {
-      fsUpdateMe(pt.lat, pt.lng, c.accuracy, heading);
-      map.setView([pt.lat, pt.lng], Math.max(map.getZoom(), fs.type === 'car' ? 16 : 18));
+      if (heading !== null) fs.lastHeading = heading;
+      fsUpdateMe(pt.lat, pt.lng, c.accuracy, fs.lastHeading);
+      if (map.getZoom() < 15) map.setView([pt.lat, pt.lng], fs.type === 'car' ? 16 : 18);   // من عرض الدولة كاملة
+      else map.panTo([pt.lat, pt.lng]);                                                     // تمركز فقط بدون أي دوران
     }
     fs.pts.push(pt);
     fsLine.addLatLng([pt.lat, pt.lng]);
@@ -1208,6 +1251,7 @@
     if (fs.result) fs.result.target = fs.target * 1000;
     fsDrawStart(); fsSave(); fsUpdateUI();
   }));
+  document.getElementById('northBtn').onclick = () => { resetNorth(); statusEl.textContent = '🧭 الخريطة موجّهة للشمال (0°).'; };
   fsEl('fieldBtn').onclick = () => fsEl('fieldCard').classList.toggle('open');
   fsEl('fsCloseCard').onclick = () => fsEl('fieldCard').classList.remove('open');
 
@@ -2216,8 +2260,12 @@
       ctx.fillText(name, x, y + 1);
     });
 
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 28px Arial'; ctx.textAlign = 'center';
-    ctx.fillText('N ↑', 50, 45);
+    // بوصلة: الصورة مرسومة بإسقاط الخريطة نفسه، فالشمال دائماً أعلى الصورة
+    ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.rect(18, 14, 64, 78); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#b71c1c'; ctx.font = 'bold 30px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('N', 50, 36);
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.moveTo(50, 52); ctx.lineTo(62, 82); ctx.lineTo(50, 74); ctx.lineTo(38, 82); ctx.closePath(); ctx.fill();
     ctx.font = '14px Arial'; ctx.textAlign = 'left'; ctx.fillText('Imagery © Esri', 10, H - 12);
 
     try { return cv.toDataURL('image/jpeg', 0.9); }

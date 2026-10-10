@@ -97,6 +97,42 @@
   .fs-start { background: #fff; border: 3px solid #000; border-radius: 8px; font-size: 12px; font-weight: bold; padding: 2px 4px; white-space: nowrap;
     box-shadow: 0 1px 5px rgba(0,0,0,.4); text-align: center; }
 
+  /* ===== بطاقة «أنت قطعت» ونتيجة المساحات ===== */
+  #arCard { position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 4000; display: none; background: #1b5e20; color: #fff;
+    border-radius: 14px; padding: 14px 12px; font-size: 15.5px; font-weight: bold; box-shadow: 0 4px 14px rgba(0,0,0,.35); text-align: center; line-height: 1.5; }
+  #arCard b { font-size: 18px; color: #ffeb3b; }
+  #arCard.show { display: block; }
+  #arCard:active { transform: scale(.98); }
+  #fsNear.show ~ #arCard, #arConfirm.show ~ #arCard { display: none; }
+  body.has-ar { padding-bottom: 92px; }
+  #arConfirm { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4700; background: #fff; border-top: 4px solid #d50000; padding: 14px 16px 22px;
+    box-shadow: 0 -4px 16px rgba(0,0,0,.3); display: none; direction: rtl; }
+  #arConfirm.show { display: block; }
+  #arConfirm .fs-near-msg { color: #8e0000; }
+  .ar-gap { font-size: 14px; margin-bottom: 10px; color: #444; }
+  #arYes { background: #2e7d32; color: #fff; }
+  #arNo { background: #eee; color: #333; }
+  #arResult { display: none; margin: 0 16px 10px; background: #fff; border: 2px solid #2e7d32; border-radius: 12px; padding: 12px; direction: rtl; }
+  #arResult.show { display: block; }
+  #arResult h3 { margin: 0 0 8px; color: #1b5e20; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
+  #arResult h3 button { background: #eee; color: #333; padding: 6px 10px; font-size: 12px; }
+  #arResult table td { text-align: right; font-size: 13.5px; }
+  #arResult table td:last-child { font-weight: bold; color: #0d3c61; }
+  #arResult .ar-big { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  #arResult .ar-big div { border-radius: 10px; padding: 8px; text-align: center; }
+  #arResult .ar-big small { display: block; font-size: 12px; font-weight: bold; }
+  #arResult .ar-big b { font-size: 22px; }
+  #arResult .ar-big .area { background: #e8f5e9; color: #1b5e20; }
+  #arResult .ar-big .dist { background: #fff3e0; color: #e65100; }
+  #arResult .ar-big b.msg { font-size: 13px; color: #b00020; }
+  #arResult .ar-note { font-size: 11.5px; color: #667; margin-top: 8px; line-height: 1.6; }
+  .ar-chk { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: #1565c0; margin-top: 3px; white-space: nowrap; }
+  .ar-chk input { width: 16px; height: 16px; }
+  .ar-close-opt { display: flex; align-items: center; gap: 8px; font-size: 13.5px; line-height: 1.5; }
+  .ar-close-opt input { width: 20px; height: 20px; flex: 0 0 auto; }
+  .ar-end { background: #000; color: #fff; border: 2px solid #fff; border-radius: 8px; font-size: 12px; font-weight: bold; padding: 2px 4px; white-space: nowrap;
+    box-shadow: 0 1px 5px rgba(0,0,0,.4); text-align: center; }
+
   /* ===== طريقة الحساب ===== */
   #modeBox { margin: 4px 16px 8px; background: #fff; border: 1px solid #d5dbe5; border-radius: 12px; padding: 10px 12px; direction: rtl; }
   #modeBox .cc-row { margin-bottom: 4px; }
@@ -343,6 +379,15 @@
     <button id="fsNearLater">متابعة السير</button>
   </div>
 </div>
+<div id="arConfirm">
+  <div class="fs-near-msg">سيتم توصيل موقعك الحالي بنقطة البداية لإغلاق الشكل وحساب المساحة، هل تريد المتابعة؟</div>
+  <div class="ar-gap">خط الإغلاق (الأحمر المتقطع على الخريطة): <b id="arGap">—</b></div>
+  <div class="fs-near-btns">
+    <button id="arYes">نعم، أغلق الشكل واحسب</button>
+    <button id="arNo">لا، استمر في التتبع</button>
+  </div>
+</div>
+<button id="arCard" type="button">📏 أنت قطعت: <b id="arDist">0 م</b> — اضغط لحساب المساحة والنسبة</button>
 
 <!-- اختيار طريقة الحساب تلقائياً: محيط مُدخل أو تتبع المشي -->
 <div id="modeBox">
@@ -366,7 +411,12 @@
   <div class="stat"><small id="sWalkLabel">إجمالي المسافة الممشاة</small><b id="sWalk">—</b><em id="sWalkSub"></em></div>
   <div class="stat"><small id="sSpecLabel">إجمالي المسافة المحددة</small><b id="sSpec">—</b><em id="sSpecSub"></em></div>
   <div class="stat pct"><small id="sPctLabel">نسبة المسافة المحددة من الممشاة</small><b id="sPct">—</b></div>
+  <div class="stat pct"><small>نسبة مسافات الصور من المسافة المقطوعة</small><b id="sPdPct">—</b></div>
+  <div class="stat pct"><small>نسبة المساحات (مساحة الصور ÷ مساحة المسار)</small><b id="sAreaPct">—</b></div>
 </div>
+
+<!-- نتيجة المساحة والنسبة من المسافة المقطوعة -->
+<div id="arResult"></div>
 
 <!-- لوحة المحيط حول النقطة M -->
 <div id="circleCard">
@@ -432,6 +482,8 @@
   let watchId = null;
   let wakeLock = null;
   let perimMode = false;   // true = حساب المساحة من المحيط المُدخل (تتبع المشي معطّل)
+  // نتيجة «المساحة والنسبة من المسافة المقطوعة»
+  let ar = null, arLayers = [], arPreviewLine = null, arPending = null;
   // حالة «رسم محيط ميداني وحساب المساحة»
   const fs = {
     target: 0, type: 'walk', accLimit: 20, closeR: 20,
@@ -587,6 +639,7 @@
       (watchId !== null ? '🟢 جاري التتبع — ' : '') +
       `نقاط المسار: ${track.length} مقبولة، ${rejected} مستبعدة (دقة أسوأ من ${ACC_LIMIT} م)` +
       (track.length > 1 ? ` — المسافة: ${fmtLen(w)}` : '');
+    arUpdateCard();
   }
   async function keepAwake() {
     try { if ('wakeLock' in navigator && watchId !== null) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
@@ -978,6 +1031,7 @@
     document.querySelectorAll('#fsType button').forEach(b => b.classList.toggle('on', b.dataset.t === fs.type));
     pdfBtn.disabled = points.length === 0 && !has;
     fsRenderResult();
+    arUpdateCard();
   }
 
   function fsRenderResult() {
@@ -1171,6 +1225,235 @@
       if (fs.pts.length) fsEl('fieldCard').classList.add('open');
     }
     fsRedrawPath(); fsUpdateUI();
+  }
+
+  // ======================================================================
+  // ===== المساحة والنسبة اعتماداً على المسافة المقطوعة =====
+  // ======================================================================
+  const arEl = id => document.getElementById(id);
+  const fmtAreaAR = a => Math.round(a).toLocaleString('en') + ' م²' +
+    (a > 1e6 ? ` (${(a / 1e6).toLocaleString('en', { maximumFractionDigits: 3 })} كم²)` : '');
+  const fmtPct = p => (p < 10 ? Math.round(p * 100) / 100 : Math.round(p * 10) / 10) + '%';
+  let pdShown = getSetting('pm_pd', '') === '1';          // هل ضغط المستخدم بطاقة «أنت قطعت»
+  let selSeq = +getSetting('pm_selseq', '0') || 0;        // عدّاد ترتيب تحديد الصور
+  const pdCloseOn = () => getSetting('pm_pdclose', '0') === '1';
+
+  // مصدر المسار: المحيط الميداني أو تتبع المشي (الذي يعمل الآن، وإلا الذي فيه نقاط)
+  function arSource() {
+    let kind = null;
+    if (fs.state === 'tracking') kind = 'field';
+    else if (watchId !== null) kind = 'walk';
+    else if (fs.pts.length) kind = 'field';
+    else if (track.length) kind = 'walk';
+    if (!kind) return null;
+    return kind === 'field'
+      ? { kind, pts: fs.pts, dist: fs.dist, closed: fs.state === 'closed', label: 'المحيط الميداني' }
+      : { kind, pts: track, dist: walkedDist(), closed: false, label: 'تتبع المشي' };
+  }
+
+  // الصور المحددة بترتيب تحديدها (الصور المحددة افتراضياً بترتيب حروفها، وما يُحدَّد لاحقاً يأتي بعدها)
+  function selectedPhotos() {
+    return points.map((p, i) => ({ p, i }))
+      .filter(o => o.p.inArea !== false)
+      .sort((a, b) => (a.p.selOrder ?? a.i) - (b.p.selOrder ?? b.i))
+      .map(o => o.p);
+  }
+
+  // مجموع الخطوط الزرقاء بين الصور: A→B + B→C + C→D (+ آخر صورة→أول صورة إذا فُعّل خط الإغلاق)
+  function photoDist() {
+    const sel = selectedPhotos(), close = pdCloseOn() && sel.length >= 3;
+    const segs = [];
+    for (let i = 0; i < sel.length - 1; i++) segs.push({ from: sel[i].name, to: sel[i + 1].name, d: distM(sel[i], sel[i + 1]) });
+    if (close) segs.push({ from: sel[sel.length - 1].name, to: sel[0].name, d: distM(sel[sel.length - 1], sel[0]) });
+    return { sel, segs, close, sum: segs.reduce((a, x) => a + x.d, 0) };   // بالمتر
+  }
+
+  // نسبة مسافات الصور = مجموع مسافات الصور ÷ المسافة المقطوعة × 100 (كلاهما بالمتر، والمسار لا يلزم إغلاقه)
+  function photoDistRatio() {
+    const s = arSource(), route = s ? s.dist : 0, pd = photoDist();
+    if (!(route > 0)) return { ok: false, text: 'ابدأ التتبع أولًا حتى يمكن حساب النسبة', route, pd, s };
+    if (pd.sel.length < 2) return { ok: false, text: 'حدّد صورتين على الأقل لحساب مسافات الصور', route, pd, s };
+    const pct = pd.sum / route * 100;
+    return { ok: true, pct, text: fmtPct(pct), route, pd, s };
+  }
+
+  function arUpdateCard() {
+    const s = arSource(), card = arEl('arCard');
+    const show = !!s && (s.pts.length > 0 || fs.state === 'tracking' || watchId !== null);
+    card.classList.toggle('show', show);
+    document.body.classList.toggle('has-ar', show);
+    if (s) arEl('arDist').textContent = fmtLenC(s.dist);
+    // تحديث نسبة مسافات الصور مباشرة مع كل نقطة GPS
+    const sp = arEl('sPdPct');
+    if (sp) { const r = photoDistRatio(); sp.textContent = r.text; sp.classList.toggle('msg', !r.ok); }
+    if (pdShown && !arEl('arConfirm').classList.contains('show')) arRender();
+  }
+
+  // إيقاف التسجيل مؤقتاً، ويُرجع هل كان يعمل
+  function arPause(kind) {
+    if (kind === 'field' && fs.state === 'tracking') { fs.state = 'paused'; fsWatch(false); fsSave(); fsUpdateUI(); return true; }
+    if (kind === 'walk' && watchId !== null) { stopTrack(); return true; }
+    return false;
+  }
+  function arResume(kind) {
+    if (kind === 'field') { fs.state = 'tracking'; fsWatch(true); fsUpdateUI(); }
+    else startTrack();
+  }
+  function arRemovePreview() { if (arPreviewLine) { map.removeLayer(arPreviewLine); arPreviewLine = null; } }
+
+  // بدء إغلاق المسار لحساب المساحة (معاينة خط الإغلاق ثم السؤال)
+  function arAskClose() {
+    const s = arSource();
+    if (!s || s.pts.length < 3) { fsToast('لا توجد نقاط مسار كافية لحساب المساحة.', 5000); return; }
+    const wasTracking = arPause(s.kind);
+    if (s.closed) { arCompute(arSource()); return; }       // المسار مغلق مسبقاً
+    const a = s.pts[s.pts.length - 1], b = s.pts[0];
+    arRemovePreview();
+    arPreviewLine = L.polyline([[a.lat, a.lng], [b.lat, b.lng]], { color: '#d50000', weight: 5, dashArray: '10 8' }).addTo(map);
+    map.fitBounds(L.latLngBounds(s.pts.map(p => [p.lat, p.lng])).pad(0.15));
+    arEl('arGap').textContent = fmtLenC(distM(a, b));
+    arPending = { kind: s.kind, wasTracking };
+    arEl('arConfirm').classList.add('show');
+  }
+
+  arEl('arCard').onclick = () => {
+    // 1) نسبة مسافات الصور: تُحسب وتظهر مباشرة بدون إغلاق المسار
+    pdShown = true; setSetting('pm_pd', '1');
+    arRefresh(true);
+    arEl('arResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 2) نسبة المساحات: تحتاج إغلاق المسار، فنعرض معاينة خط الإغلاق ونسأل
+    const s = arSource();
+    if (s && s.pts.length >= 3) arAskClose();
+  };
+  arEl('arYes').onclick = () => {
+    arEl('arConfirm').classList.remove('show');
+    arRemovePreview();
+    const s = arSource();
+    if (s) arCompute(s);
+    arPending = null;
+  };
+  arEl('arNo').onclick = () => {
+    arEl('arConfirm').classList.remove('show');
+    arRemovePreview();
+    if (arPending && arPending.wasTracking) arResume(arPending.kind);
+    arPending = null;
+    arUpdateCard();
+  };
+
+  // مساحة نقاط الصور المحددة (بترتيب التحديد، مع إغلاق آخر صورة بأول صورة)
+  function arImages() {
+    const sel = selectedPhotos();
+    if (sel.length < 3) return { n: sel.length, area: null, perim: null };
+    const a = fsArea(sel);   // turf.polygon([[lng, lat], ...]) ثم turf.area
+    let per = 0;
+    for (let i = 0; i < sel.length; i++) per += distM(sel[i], sel[(i + 1) % sel.length]);
+    return { n: sel.length, area: a.area, perim: per, coords: sel.map(p => [p.lat, p.lng]) };
+  }
+
+  function arCompute(s) {
+    const pts = s.pts.map(p => ({ lat: p.lat, lng: p.lng }));
+    if (pts.length < 3) { fsToast('لا توجد نقاط مسار كافية لحساب المساحة.', 5000); return; }
+    const r = fsArea(pts);   // المساحة من شكل وإحداثيات المسار، وليس من الرقم وحده
+    const gap = distM(pts[pts.length - 1], pts[0]);
+    ar = { kind: s.kind, label: s.label, pts, dist: s.dist, routePerim: s.dist + gap, routeArea: r.area, by: r.by, at: new Date().toLocaleString('ar-SA') };
+    pdShown = true; setSetting('pm_pd', '1');
+    arRecalcImages(true);
+    arEl('arResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // يُعاد حساب كل شيء فور تغيير الصور المحددة
+  function arRefresh(fit) {
+    if (ar) { arRecalcImages(fit); return; }
+    arDraw(fit); arRender(); updateSummary(); arUpdateCard();
+  }
+  function arRecalcImages(fit) {
+    if (!ar) { arRefresh(fit); return; }
+    const im = arImages();
+    ar.img = im;
+    if (im.area === null) { ar.pct = null; ar.err = 'يلزم تحديد ثلاث صور على الأقل لحساب مساحة الصور.'; }
+    else if (!(ar.routeArea > 0)) { ar.pct = null; ar.err = 'المساحة الإجمالية للمسار تساوي صفرًا — لا يمكن حساب النسبة. تحرّك في مسار يحيط بمساحة ثم أعد المحاولة.'; }
+    else { ar.pct = im.area / ar.routeArea * 100; ar.err = null; }
+    DB.save(ar, 'ar');
+    arDraw(fit);
+    arRender();
+    updateSummary();
+  }
+
+  function arDraw(fit) {
+    arLayers.forEach(l => map.removeLayer(l)); arLayers = [];
+    const pd = photoDist();
+    const sc = pd.sel.map(p => [p.lat, p.lng]);
+    if (ar) {
+      const rp = ar.pts.map(p => [p.lat, p.lng]);
+      // مسار المستخدم: حد أخضر عريض وتعبئة خضراء شفافة
+      arLayers.push(L.polygon(rp, { color: '#2e7d32', weight: 8, fillColor: '#43a047', fillOpacity: 0.2, lineJoin: 'round' }).addTo(map));
+      // شكل الصور المحددة: حد أزرق وتعبئة زرقاء شفافة
+      if (ar.img && ar.img.coords) arLayers.push(L.polygon(ar.img.coords, { color: '#1565c0', weight: 4, fillColor: '#1e88e5', fillOpacity: 0.28 }).addTo(map));
+      const st = rp[0], en = rp[rp.length - 1];
+      arLayers.push(L.marker(st, { zIndexOffset: 1600, icon: L.divIcon({ className: '', iconSize: [70, 24], iconAnchor: [35, 34], html: '<div class="fs-start">🏁 البداية</div>' }) }).addTo(map));
+      arLayers.push(L.marker(en, { zIndexOffset: 1600, icon: L.divIcon({ className: '', iconSize: [70, 24], iconAnchor: [35, -10], html: '<div class="ar-end">🔚 النهاية</div>' }) }).addTo(map));
+    } else if (pdShown && sc.length >= 2) {
+      // الخطوط الزرقاء بين الصور المحددة (مفتوحة، أو مغلقة إذا فُعّل خط الإغلاق)
+      arLayers.push(L.polyline(pd.close ? sc.concat([sc[0]]) : sc, { color: '#1565c0', weight: 5 }).addTo(map));
+    }
+    // طول كل خط أزرق فوقه
+    if (pdShown) pd.segs.forEach(g => {
+      const a = points.find(p => p.name === g.from), b = points.find(p => p.name === g.to);
+      if (a && b) arLayers.push(L.marker([(a.lat + b.lat) / 2, (a.lng + b.lng) / 2], { interactive: false, icon: L.divIcon({ className: '', iconSize: [0, 0],
+        html: `<div style="transform:translate(-50%,-50%);background:#1565c0;color:#fff;font:bold 11px Arial;padding:2px 5px;border-radius:6px;white-space:nowrap">${fmtLenC(g.d)}</div>` }) }).addTo(map));
+    });
+    if (fit) {
+      const all = (ar ? ar.pts.map(p => [p.lat, p.lng]) : []).concat(sc);
+      if (all.length >= 2) map.fitBounds(L.latLngBounds(all).pad(0.12));
+    }
+  }
+
+  function arRender() {
+    const box = arEl('arResult');
+    if (!ar && !pdShown) { box.classList.remove('show'); box.innerHTML = ''; return; }
+    const r = photoDistRatio(), pd = r.pd;
+    const order = pd.sel.map(p => p.name).join(' → ') + (pd.close ? ' → ' + pd.sel[0].name : '');
+    const segTxt = pd.segs.map(g => `<span dir="ltr">${g.from}→${g.to}</span> ${fmtLenC(g.d)}`).join(' + ');
+    const im = ar && ar.img || {};
+    box.innerHTML = `
+      <h3><span>📐 النسب من المسافة المقطوعة${r.s ? ' (' + r.s.label + ')' : ''}</span><button id="arHide">إخفاء</button></h3>
+      <table>
+        <tr><td>أنت قطعت</td><td>${fmtLenC(r.route)}</td></tr>
+        <tr><td>الصور المحددة بالترتيب</td><td><span dir="ltr">${pd.sel.length ? order : '—'}</span></td></tr>
+        <tr><td>مجموع مسافات الصور</td><td>${pd.sel.length >= 2 ? fmtLenC(pd.sum) : '—'}</td></tr>
+        ${segTxt ? `<tr><td colspan="2" style="font-weight:normal;font-size:12px;color:#556">${segTxt}</td></tr>` : ''}
+        <tr><td colspan="2" style="font-weight:normal;color:#333"><label class="ar-close-opt"><input type="checkbox" id="pdClose" ${pdCloseOn() ? 'checked' : ''}> احتساب خط إغلاق المحيط (من آخر صورة إلى أول صورة)</label></td></tr>
+      </table>
+      <div class="ar-big">
+        <div class="dist" style="grid-column:1 / -1"><small>نسبة مسافات الصور من المسافة المقطوعة</small><b class="${r.ok ? '' : 'msg'}">${r.text}</b>
+          ${r.ok ? `<div style="font-size:12px;margin-top:2px" dir="rtl">${Math.round(pd.sum * 10) / 10} م ÷ ${Math.round(r.route * 10) / 10} م × 100</div>` : ''}</div>
+      </div>
+      <h3 style="margin-top:14px"><span>🟩 نسبة المساحات</span></h3>
+      ${ar ? `
+      <table>
+        <tr><td>المسافة عند الإغلاق</td><td>${fmtLenC(ar.dist)}</td></tr>
+        <tr><td>محيط المسار بعد الإغلاق</td><td>${fmtLenC(ar.routePerim)}</td></tr>
+        <tr><td>المساحة الإجمالية للمسار</td><td>${fmtAreaAR(ar.routeArea)}</td></tr>
+        <tr><td>عدد الصور المحددة</td><td>${im.n || 0}</td></tr>
+        <tr><td>محيط نقاط الصور</td><td>${im.perim != null ? fmtLenC(im.perim) : '—'}</td></tr>
+        <tr><td>إجمالي مساحة الصور المحددة</td><td>${im.area != null ? fmtAreaAR(im.area) : '—'}</td></tr>
+      </table>
+      <div class="ar-big"><div class="area" style="grid-column:1 / -1"><small>نسبة مساحة الصور من المساحة الإجمالية</small><b class="${ar.pct == null ? 'msg' : ''}">${ar.pct != null ? fmtPct(ar.pct) : ar.err}</b></div></div>
+      <div class="ar-note">المساحة محسوبة من ${ar.pts.length} نقطة GPS بعد توصيل آخر نقطة بأول نقطة (${ar.by}). — ${ar.at}</div>`
+      : `<div class="ar-note">نسبة المساحات تحتاج إغلاق المسار (توصيل موقعك بنقطة البداية).</div>
+         <button id="arCloseBtn" style="width:100%;margin-top:6px;background:#2e7d32;color:#fff">🔒 إغلاق المسار وحساب نسبة المساحات</button>`}
+      <div class="ar-note">نسبة مسافات الصور لا تحتاج إغلاق المسار، وتعمل مع المسار المستقيم أو المنحني أو المفتوح أو المغلق. حدّد الصور وترتيبها من مربع «تحديد» في الجدول.
+        «نسبة المسافات» القديمة في الملخص (A↔A') حساب مختلف ولم يتغير.</div>`;
+    box.classList.add('show');
+    arEl('arHide').onclick = () => { ar = null; pdShown = false; setSetting('pm_pd', ''); DB.save(null, 'ar'); arRefresh(); };
+    arEl('pdClose').onchange = e => { setSetting('pm_pdclose', e.target.checked ? '1' : '0'); arRefresh(); };
+    const cb = arEl('arCloseBtn'); if (cb) cb.onclick = arAskClose;
+  }
+
+  async function arRestore() {
+    const d = await DB.load('ar', null);
+    if (d && Array.isArray(d.pts) && d.pts.length >= 3) ar = d;
+    arRefresh(false);
   }
 
   // ===== أزرار الاختيار =====
@@ -1649,17 +1932,27 @@
     const tbody = document.querySelector('#pointsTable tbody');
     tbody.innerHTML = '';
     let sumD = 0;
+    const selRank = new Map(selectedPhotos().map((q, k) => [q, k + 1]));
     points.forEach((p, i) => {
       const d = pairDist(p);
       if (d !== null) sumD += d;
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><b>${p.name}</b></td>
+        <td><b>${p.name}</b><br><label class="ar-chk" title="تحديد الصورة لحساب مسافات ومساحة الصور"><input type="checkbox" class="ar-in" ${p.inArea !== false ? 'checked' : ''}> تحديد ${selRank.get(p) || ''}</label></td>
         <td><img src="${p.img}"></td>
         <td><span class="ll">${ll(p)}</span>${SRC_TAG[p.src] ? `<br><small style="color:#2e7d32">${SRC_TAG[p.src]}</small>` : ''}<br><button class="mini btn-del edit-c" style="color:#1f4e79">✏️ تعديل</button></td>
         <td>${p.pick ? `<span class="ll pk">${ll(p.pick)}</span><br>` : ''}</td>
         <td>${d !== null ? `<span class="dist">${fmtLen(d)}</span>` : '—'}</td>
         <td><small>${p.time}</small></td>`;
+      const chk = tr.querySelector('.ar-in');
+      chk.onclick = ev => ev.stopPropagation();
+      chk.onchange = async () => {
+        p.inArea = chk.checked;
+        if (chk.checked) { p.selOrder = 1e6 + (++selSeq); setSetting('pm_selseq', String(selSeq)); }   // يُضاف في آخر الترتيب
+        else delete p.selOrder;
+        await persist();
+        redraw();   // يعيد ترقيم الترتيب ويحسب النسب فوراً
+      };
       tr.querySelector('.edit-c').onclick = ev => { ev.stopPropagation(); editCoords(i); };
       const cell = tr.children[3];
       const b1 = document.createElement('button');
@@ -1688,6 +1981,7 @@
     pdfBtn.disabled = points.length === 0 && !fs.pts.length;
     updateSummary();
     fillCenters();
+    arRefresh(false);   // تحديث نسب الصور فور إضافة أو حذف أو تحديد صورة
   }
 
   // تفصيل الجمع لعرضه تحت الرقم، مثل: A 33.2 + B 42.8
@@ -1699,7 +1993,7 @@
 
   function updateSummary() {
     const box = document.getElementById('summary');
-    if (!points.length && !track.length && !perimMode) { box.classList.remove('show'); return; }
+    if (!points.length && !track.length && !perimMode && !ar && !fs.pts.length) { box.classList.remove('show'); return; }
     box.classList.add('show');
     const s = specStats(), r = ratio();
     if (perimMode) {
@@ -1718,7 +2012,12 @@
     document.getElementById('sSpec').textContent = s.dist !== null ? fmtLen(s.dist) : '—';
     document.getElementById('sSpecSub').textContent =
       s.dist === null ? 'حدّد نقطة واحدة على الأقل' : sumBreakdown();
-    document.getElementById('sPctLabel').textContent = perimMode ? 'نسبة المسافة المحددة من المحيط المُدخل' : 'نسبة المسافة المحددة من الممشاة';
+    document.getElementById('sPctLabel').textContent = perimMode ? 'نسبة المسافات (المحدد ÷ المحيط المُدخل)' : 'نسبة المسافات (المحدد ÷ الممشى)';
+    const ap = document.getElementById('sAreaPct');
+    ap.textContent = !ar ? 'اضغط بطاقة «أنت قطعت»' : (ar.pct != null ? fmtPct(ar.pct) : ar.err);
+    ap.classList.toggle('msg', !ar || ar.pct == null);
+    const pr = photoDistRatio(), pe2 = document.getElementById('sPdPct');
+    pe2.textContent = pr.text; pe2.classList.toggle('msg', !pr.ok);
     const pe = document.getElementById('sPct');
     pe.textContent = r.text;
     pe.classList.toggle('msg', !r.ok);
@@ -1767,6 +2066,7 @@
     const W = 1400, H = 900;
     const all = [...photoCoords(), ...pickedCoords(), ...track];
     all.push(...fs.pts);
+    if (ar) all.push(...ar.pts);
     if (!all.length) return null;
     const circ = circleLayer && circleState.center ? circleState : null;
     if (circ) {
@@ -1814,6 +2114,34 @@
       ctx.fillStyle = '#8e24aa'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
       ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('M', mx, my - 49);
+    }
+
+    // خطوط مسافات الصور (أزرق) عندما لا توجد نتيجة مساحة
+    if (!ar && pdShown) {
+      const pd = photoDist();
+      if (pd.sel.length >= 2) {
+        drawPath(ctx, pd.sel.map(toPx), pd.close);
+        ctx.setLineDash([]); ctx.strokeStyle = '#1565c0'; ctx.lineWidth = 6; ctx.lineJoin = 'round'; ctx.stroke();
+      }
+    }
+    // المساحة والنسبة: مسار المستخدم المغلق (أخضر) وشكل الصور المحددة (أزرق)
+    if (ar) {
+      const rp = ar.pts.map(toPx);
+      drawPath(ctx, rp, true); ctx.fillStyle = 'rgba(67,160,71,.25)'; ctx.fill();
+      ctx.setLineDash([]); ctx.strokeStyle = '#2e7d32'; ctx.lineWidth = 9; ctx.lineJoin = 'round'; ctx.stroke();
+      if (ar.img && ar.img.coords) {
+        const ip = ar.img.coords.map(c => toPx({ lat: c[0], lng: c[1] }));
+        drawPath(ctx, ip, true); ctx.fillStyle = 'rgba(30,136,229,.3)'; ctx.fill();
+        ctx.strokeStyle = '#1565c0'; ctx.lineWidth = 5; ctx.stroke();
+      }
+      const lbl = (c, t, bg, fg, dy) => {
+        const [x, y] = toPx(c); ctx.font = 'bold 18px Arial'; const w = ctx.measureText(t).width + 14;
+        ctx.fillStyle = bg; ctx.strokeStyle = fg; ctx.lineWidth = 3; ctx.beginPath(); ctx.rect(x - w / 2, y + dy, w, 26); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, x, y + dy + 13);
+        ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.fillStyle = '#000'; ctx.fill();
+      };
+      lbl(ar.pts[0], 'START', '#fff', '#000', -42);
+      lbl(ar.pts[ar.pts.length - 1], 'END', '#000', '#fff', 14);
     }
 
     // المحيط الميداني (أزرق للمشي، أخضر للسيارة)
@@ -1917,7 +2245,7 @@
             ? `<div>طول المحيط المُدخل<b>${fmtLenC(enteredPerim())}</b>نصف القطر ${fmtRad(perimCalc(enteredPerim()).radius)} — المساحة التقديرية (دائرة): ${fmtM2(perimCalc(enteredPerim()).area)}</div>`
             : `<div>إجمالي المسافة الممشاة<b>${wk > 0 ? fmtLen(wk) : '—'}</b>${track.length} نقطة GPS — مستبعدة: ${rejected}${trackShape() ? ` — محيط المسار المغلق: ${fmtLen(trackShape().perim)} — المساحة المغلقة: ${fmtAreaFull(trackShape().area)}` : ''}</div>`}
           <div>${sp.label}<b>${sp.dist !== null ? fmtLen(sp.dist) : '—'}</b>${sp.dist !== null ? sumBreakdown() : 'لا توجد نقاط مختارة'}</div>
-          <div class="p">${perimMode ? 'نسبة المحدد من المحيط المُدخل' : 'نسبة المحدد من الممشى'}<b style="${rt.ok ? '' : 'font-size:11px;color:#a33'}">${rt.text}</b></div>
+          <div class="p">${perimMode ? 'نسبة المسافات (من المحيط المُدخل)' : 'نسبة المسافات (من الممشى)'}<b style="${rt.ok ? '' : 'font-size:11px;color:#a33'}">${rt.text}</b></div>
         </div>`;
 
       statusEl.textContent = 'جاري تحميل صورة الخريطة...';
@@ -1932,6 +2260,16 @@
           <div>طول المحيط حول M<b>${fmtLenC(circleState.circ)}</b>المركز: ${circleState.center.label}</div>
           <div>نصف القطر<b>${fmtRad(circleState.radius)}</b>${circleState.mode === 'radius' ? 'مُدخل كنصف قطر' : 'محسوب من المحيط'}</div>
           <div>مساحة الدائرة<b>${fmtM2(circleState.area)}</b>${fmtKm2(circleState.area)}</div>
+        </div>` : ''}
+        ${pdShown ? (() => { const r = photoDistRatio(); return `<div class="sumrow">
+          <div>أنت قطعت<b>${fmtLenC(r.route)}</b>${r.s ? r.s.label : ''}</div>
+          <div>مجموع مسافات الصور<b>${r.pd.sel.length >= 2 ? fmtLenC(r.pd.sum) : '—'}</b><span dir="ltr">${r.pd.sel.map(p => p.name).join(' → ')}${r.pd.close ? ' → ' + r.pd.sel[0].name : ''}</span>${r.pd.close ? ' (مع خط الإغلاق)' : ''}</div>
+          <div class="p">نسبة مسافات الصور من المسافة المقطوعة<b style="${r.ok ? '' : 'font-size:11px;color:#a33'}">${r.text}</b>مجموع مسافات الصور ÷ المسافة المقطوعة</div>
+        </div>`; })() : ''}
+        ${ar ? `<div class="sumrow">
+          <div>المسافة المقطوعة / المحيط بعد الإغلاق<b>${fmtLenC(ar.dist)}</b>المحيط بعد الإغلاق: ${fmtLenC(ar.routePerim)}</div>
+          <div>المساحة الإجمالية للمسار<b>${fmtAreaAR(ar.routeArea)}</b>مساحة الصور المحددة (${(ar.img && ar.img.n) || 0}): ${ar.img && ar.img.area != null ? fmtAreaAR(ar.img.area) : '—'} — محيطها: ${ar.img && ar.img.perim != null ? fmtLenC(ar.img.perim) : '—'}</div>
+          <div class="p">نسبة المساحات<b style="${ar.pct != null ? '' : 'font-size:11px;color:#a33'}">${ar.pct != null ? fmtPct(ar.pct) : ar.err}</b>مساحة الصور ÷ مساحة المسار</div>
         </div>` : ''}
         ${fs.pts.length ? `<div class="sumrow">
           <div>المحيط الميداني (${FS_STYLE[fs.type].label})<b>${fs.result ? fmtLenC(fs.result.perim) : fmtLenC(fs.dist)}</b>${fs.result ? 'المحيط الفعلي' : 'المسافة المقطوعة — الشكل لم يُغلق'}${fs.target ? ' — المستهدف: ' + fmtLenC(fs.target * 1000) : ''}</div>
@@ -2023,6 +2361,7 @@
       statusEl.textContent = `تم استرجاع ${points.length} نقطة محفوظة ✔`;
     }
     await fsRestore();
+    await arRestore();
     // استرجاع وضع الحساب (محيط مُدخل أو تتبع المشي)
     const savedPerim = getSetting('pm_perim', '');
     if (savedPerim) { perimInput.value = savedPerim; await applyPerimeter(); } else updateModeUI();

@@ -965,7 +965,9 @@
       paused: '🟡 متوقف مؤقتاً — اضغط «متابعة» للاستمرار', closed: '🟢 تم إغلاق الشكل وحساب المساحة' }[fs.state];
 
     const has = fs.pts.length > 0;
-    fsEl('fsStart').disabled = fs.state !== 'idle';
+    // «بدء التتبع» متاح دائماً إلا أثناء التسجيل، ويصبح «بدء مسار جديد» إذا كان هناك مسار سابق
+    fsEl('fsStart').disabled = fs.state === 'tracking';
+    fsEl('fsStart').textContent = fs.pts.length ? '🔄 بدء مسار جديد' : '▶ بدء التتبع';
     fsEl('fsPause').disabled = fs.state !== 'tracking';
     fsEl('fsResume').disabled = fs.state !== 'paused';
     fsEl('fsCloseShape').disabled = !((fs.state === 'tracking' || fs.state === 'paused') && fs.pts.length >= 3);
@@ -1069,6 +1071,10 @@
   fsEl('fsStart').onclick = async () => {
     if (!navigator.geolocation) return fsToast('المتصفح لا يدعم تحديد الموقع.');
     fsReadSettings();
+    if (fs.pts.length && !confirm('سيُمسح المسار الحالي ونتيجته، ويبدأ تسجيل مسار جديد من موقعك الآن.\nهل تريد المتابعة؟')) return;
+    if (fsMe) { map.removeLayer(fsMe); fsMe = null; }
+    if (fsAccCircle) { map.removeLayer(fsAccCircle); fsAccCircle = null; }
+    fsEl('fsNear').classList.remove('show');
     if (!fs.target && !confirm('لم تُدخل طول المحيط المستهدف.\nتريد البدء بدونه؟ (لن تظهر المسافة المتبقية ونسبة الإنجاز)')) return;
     Object.assign(fs, { pts: [], dist: 0, rejected: 0, jumps: 0, alert90: false, leftStart: false, nearShown: false, result: null, state: 'tracking' });
     fsRedrawPath();

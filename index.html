@@ -128,6 +128,7 @@
   #arResult .ar-note { font-size: 11.5px; color: #667; margin-top: 8px; line-height: 1.6; }
   .ar-chk { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: #1565c0; margin-top: 3px; white-space: nowrap; }
   .ar-chk input { width: 16px; height: 16px; }
+  .ar-trip { background: #e3f2fd; color: #0d47a1; font-weight: bold; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 14.5px; line-height: 1.6; }
   .ar-close-opt { display: flex; align-items: center; gap: 8px; font-size: 13.5px; line-height: 1.5; }
   .ar-close-opt input { width: 20px; height: 20px; flex: 0 0 auto; }
   .ar-end { background: #000; color: #fff; border: 2px solid #fff; border-radius: 8px; font-size: 12px; font-weight: bold; padding: 2px 4px; white-space: nowrap;
@@ -410,7 +411,6 @@
 <div id="summary">
   <div class="stat"><small id="sWalkLabel">إجمالي المسافة الممشاة</small><b id="sWalk">—</b><em id="sWalkSub"></em></div>
   <div class="stat"><small id="sSpecLabel">إجمالي المسافة المحددة</small><b id="sSpec">—</b><em id="sSpecSub"></em></div>
-  <div class="stat pct"><small id="sPctLabel">نسبة المسافة المحددة من الممشاة</small><b id="sPct">—</b></div>
   <div class="stat pct"><small>نسبة مسافات الصور من المسافة المقطوعة</small><b id="sPdPct">—</b></div>
   <div class="stat pct"><small>نسبة المساحات (مساحة الصور ÷ مساحة المسار)</small><b id="sAreaPct">—</b></div>
 </div>
@@ -1268,13 +1268,34 @@
     return { sel, segs, close, sum: segs.reduce((a, x) => a + x.d, 0) };   // بالمتر
   }
 
-  // نسبة مسافات الصور = مجموع مسافات الصور ÷ المسافة المقطوعة × 100 (كلاهما بالمتر، والمسار لا يلزم إغلاقه)
+  // مسافة بالمتر/الكيلومتر بدون أصفار زائدة: 10 كم، 1.15 كم، 47.1 م
+  const fmtNice = m => m >= 1000 ? (Math.round(m / 10) / 100) + ' كم' : (Math.round(m * 10) / 10) + ' م';
+  const photoCountAr = n => n === 1 ? 'صورة واحدة' : n === 2 ? 'صورتان' : n >= 3 && n <= 10 ? n + ' صور' : n + ' صورة';
+
+  // مجموع عمود «المسافة بينهما» للصور التي حُددت لها إحداثية بديلة فقط
+  // (الصفوف التي فيها — لا تدخل في المجموع ولا في العدد)
+  function pairColumn() {
+    const rows = points.filter(p => p.pick).map(p => ({ name: p.name, d: pairDist(p) }));   // Haversine بين الصورة وإحداثيتها المحددة فقط
+    const sum = Math.round(rows.reduce((a, x) => a + x.d, 0) * 10) / 10;
+    return { rows, n: rows.length, sum };
+  }
+
+  // نسبة مسافات الصور = مجموع عمود «المسافة بينهما» ÷ المسافة المقطوعة فعلياً × 100 (كلاهما بالمتر)
   function photoDistRatio() {
-    const s = arSource(), route = s ? s.dist : 0, pd = photoDist();
-    if (!(route > 0)) return { ok: false, text: 'ابدأ التتبع أولًا حتى يمكن حساب النسبة', route, pd, s };
-    if (pd.sel.length < 2) return { ok: false, text: 'حدّد صورتين على الأقل لحساب مسافات الصور', route, pd, s };
-    const pct = pd.sum / route * 100;
-    return { ok: true, pct, text: fmtPct(pct), route, pd, s };
+    const s = arSource(), route = s ? s.dist : 0, pc = pairColumn();
+    const target = fs.target > 0 ? fs.target * 1000 : 0;
+    const base = { route, pc, s, target };
+    if (!(route > 0)) return { ...base, ok: false, text: 'ابدأ تتبع الرحلة أولًا لحساب النسبة' };
+    if (!pc.n) return { ...base, ok: false, text: 'حدّد إحداثية بديلة لصورة واحدة على الأقل' };
+    const pct = pc.sum / route * 100;
+    return { ...base, ok: true, pct, text: pct.toFixed(2) + '%' };
+  }
+  // نسبة إنجاز الرحلة = المقطوع فعلياً ÷ المستهدف × 100
+  function tripProgress() {
+    const s = arSource(), route = s ? s.dist : 0, target = fs.target > 0 ? fs.target * 1000 : 0;
+    if (!target) return { ok: false, route, target, text: 'أدخل المسافة المستهدفة' };
+    const pct = route / target * 100;
+    return { ok: true, route, target, pct, left: target - route, text: (Math.round(pct * 10) / 10) + '%' };
   }
 
   function arUpdateCard() {
@@ -1392,16 +1413,7 @@
       const st = rp[0], en = rp[rp.length - 1];
       arLayers.push(L.marker(st, { zIndexOffset: 1600, icon: L.divIcon({ className: '', iconSize: [70, 24], iconAnchor: [35, 34], html: '<div class="fs-start">🏁 البداية</div>' }) }).addTo(map));
       arLayers.push(L.marker(en, { zIndexOffset: 1600, icon: L.divIcon({ className: '', iconSize: [70, 24], iconAnchor: [35, -10], html: '<div class="ar-end">🔚 النهاية</div>' }) }).addTo(map));
-    } else if (pdShown && sc.length >= 2) {
-      // الخطوط الزرقاء بين الصور المحددة (مفتوحة، أو مغلقة إذا فُعّل خط الإغلاق)
-      arLayers.push(L.polyline(pd.close ? sc.concat([sc[0]]) : sc, { color: '#1565c0', weight: 5 }).addTo(map));
     }
-    // طول كل خط أزرق فوقه
-    if (pdShown) pd.segs.forEach(g => {
-      const a = points.find(p => p.name === g.from), b = points.find(p => p.name === g.to);
-      if (a && b) arLayers.push(L.marker([(a.lat + b.lat) / 2, (a.lng + b.lng) / 2], { interactive: false, icon: L.divIcon({ className: '', iconSize: [0, 0],
-        html: `<div style="transform:translate(-50%,-50%);background:#1565c0;color:#fff;font:bold 11px Arial;padding:2px 5px;border-radius:6px;white-space:nowrap">${fmtLenC(g.d)}</div>` }) }).addTo(map));
-    });
     if (fit) {
       const all = (ar ? ar.pts.map(p => [p.lat, p.lng]) : []).concat(sc);
       if (all.length >= 2) map.fitBounds(L.latLngBounds(all).pad(0.12));
@@ -1411,22 +1423,24 @@
   function arRender() {
     const box = arEl('arResult');
     if (!ar && !pdShown) { box.classList.remove('show'); box.innerHTML = ''; return; }
-    const r = photoDistRatio(), pd = r.pd;
-    const order = pd.sel.map(p => p.name).join(' → ') + (pd.close ? ' → ' + pd.sel[0].name : '');
-    const segTxt = pd.segs.map(g => `<span dir="ltr">${g.from}→${g.to}</span> ${fmtLenC(g.d)}`).join(' + ');
+    const r = photoDistRatio(), pc = r.pc, tp = tripProgress();
+    const rowsTxt = pc.rows.map(x => `${x.name} ${x.d.toFixed(1)}`).join(' + ');
     const im = ar && ar.img || {};
     box.innerHTML = `
-      <h3><span>📐 النسب من المسافة المقطوعة${r.s ? ' (' + r.s.label + ')' : ''}</span><button id="arHide">إخفاء</button></h3>
+      <h3><span>📐 نتائج الرحلة${r.s ? ' (' + r.s.label + ')' : ''}</span><button id="arHide">إخفاء</button></h3>
+      <div class="ar-trip">${tp.ok ? `قطعت ${fmtNice(tp.route)} من أصل ${fmtNice(tp.target)} — نسبة الإنجاز ${tp.text}` : `قطعت ${fmtNice(r.route)} — ${tp.text} في «محيط ميداني» لحساب نسبة الإنجاز`}</div>
       <table>
-        <tr><td>أنت قطعت</td><td>${fmtLenC(r.route)}</td></tr>
-        <tr><td>الصور المحددة بالترتيب</td><td><span dir="ltr">${pd.sel.length ? order : '—'}</span></td></tr>
-        <tr><td>مجموع مسافات الصور</td><td>${pd.sel.length >= 2 ? fmtLenC(pd.sum) : '—'}</td></tr>
-        ${segTxt ? `<tr><td colspan="2" style="font-weight:normal;font-size:12px;color:#556">${segTxt}</td></tr>` : ''}
-        <tr><td colspan="2" style="font-weight:normal;color:#333"><label class="ar-close-opt"><input type="checkbox" id="pdClose" ${pdCloseOn() ? 'checked' : ''}> احتساب خط إغلاق المحيط (من آخر صورة إلى أول صورة)</label></td></tr>
+        <tr><td>المسافة المستهدفة</td><td>${tp.target ? fmtNice(tp.target) : '—'}</td></tr>
+        <tr><td>المسافة المقطوعة فعليًا</td><td>${fmtNice(r.route)}</td></tr>
+        <tr><td>المتبقي من الهدف</td><td>${tp.ok ? (tp.left >= 0 ? fmtNice(tp.left) : 'تجاوزت الهدف بـ ' + fmtNice(-tp.left)) : '—'}</td></tr>
+        <tr><td>نسبة إنجاز الرحلة</td><td>${tp.text}</td></tr>
+        <tr><td>عدد الصور المحددة</td><td>${pc.n ? photoCountAr(pc.n) : '—'}</td></tr>
+        <tr><td>مجموع عمود «المسافة بينهما»</td><td>${pc.n ? pc.sum.toFixed(1) + ' م' : '—'}</td></tr>
+        ${rowsTxt ? `<tr><td colspan="2" style="font-weight:normal;font-size:12px;color:#556"><span dir="ltr">${rowsTxt}</span> م</td></tr>` : ''}
       </table>
       <div class="ar-big">
         <div class="dist" style="grid-column:1 / -1"><small>نسبة مسافات الصور من المسافة المقطوعة</small><b class="${r.ok ? '' : 'msg'}">${r.text}</b>
-          ${r.ok ? `<div style="font-size:12px;margin-top:2px" dir="rtl">${Math.round(pd.sum * 10) / 10} م ÷ ${Math.round(r.route * 10) / 10} م × 100</div>` : ''}</div>
+          ${r.ok ? `<div style="font-size:12px;margin-top:2px">${pc.sum.toFixed(1)} م ÷ ${Math.round(r.route * 10) / 10} م × 100</div>` : ''}</div>
       </div>
       <h3 style="margin-top:14px"><span>🟩 نسبة المساحات</span></h3>
       ${ar ? `
@@ -1442,11 +1456,10 @@
       <div class="ar-note">المساحة محسوبة من ${ar.pts.length} نقطة GPS بعد توصيل آخر نقطة بأول نقطة (${ar.by}). — ${ar.at}</div>`
       : `<div class="ar-note">نسبة المساحات تحتاج إغلاق المسار (توصيل موقعك بنقطة البداية).</div>
          <button id="arCloseBtn" style="width:100%;margin-top:6px;background:#2e7d32;color:#fff">🔒 إغلاق المسار وحساب نسبة المساحات</button>`}
-      <div class="ar-note">نسبة مسافات الصور لا تحتاج إغلاق المسار، وتعمل مع المسار المستقيم أو المنحني أو المفتوح أو المغلق. حدّد الصور وترتيبها من مربع «تحديد» في الجدول.
-        «نسبة المسافات» القديمة في الملخص (A↔A') حساب مختلف ولم يتغير.</div>`;
+      <div class="ar-note">نسبة مسافات الصور = مجموع عمود «المسافة بينهما» للصور التي حُددت لها إحداثية بديلة ÷ المسافة المقطوعة فعليًا × 100. لا تحتاج إغلاق المسار، ولا تستخدم الخطوط بين الصور.
+        نسبة إنجاز الرحلة = المقطوع فعليًا ÷ المستهدف × 100.</div>`;
     box.classList.add('show');
     arEl('arHide').onclick = () => { ar = null; pdShown = false; setSetting('pm_pd', ''); DB.save(null, 'ar'); arRefresh(); };
-    arEl('pdClose').onchange = e => { setSetting('pm_pdclose', e.target.checked ? '1' : '0'); arRefresh(); };
     const cb = arEl('arCloseBtn'); if (cb) cb.onclick = arAskClose;
   }
 
@@ -1938,7 +1951,7 @@
       if (d !== null) sumD += d;
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><b>${p.name}</b><br><label class="ar-chk" title="تحديد الصورة لحساب مسافات ومساحة الصور"><input type="checkbox" class="ar-in" ${p.inArea !== false ? 'checked' : ''}> تحديد ${selRank.get(p) || ''}</label></td>
+        <td><b>${p.name}</b><br><label class="ar-chk" title="ضمن شكل مساحة الصور فقط (لا يؤثر على نسبة المسافات)"><input type="checkbox" class="ar-in" ${p.inArea !== false ? 'checked' : ''}> مساحة ${selRank.get(p) || ''}</label></td>
         <td><img src="${p.img}"></td>
         <td><span class="ll">${ll(p)}</span>${SRC_TAG[p.src] ? `<br><small style="color:#2e7d32">${SRC_TAG[p.src]}</small>` : ''}<br><button class="mini btn-del edit-c" style="color:#1f4e79">✏️ تعديل</button></td>
         <td>${p.pick ? `<span class="ll pk">${ll(p.pick)}</span><br>` : ''}</td>
@@ -1995,7 +2008,7 @@
     const box = document.getElementById('summary');
     if (!points.length && !track.length && !perimMode && !ar && !fs.pts.length) { box.classList.remove('show'); return; }
     box.classList.add('show');
-    const s = specStats(), r = ratio();
+    const s = specStats();
     if (perimMode) {
       const P = enteredPerim(), k = perimCalc(P);
       document.getElementById('sWalkLabel').textContent = 'طول المحيط المُدخل';
@@ -2012,15 +2025,11 @@
     document.getElementById('sSpec').textContent = s.dist !== null ? fmtLen(s.dist) : '—';
     document.getElementById('sSpecSub').textContent =
       s.dist === null ? 'حدّد نقطة واحدة على الأقل' : sumBreakdown();
-    document.getElementById('sPctLabel').textContent = perimMode ? 'نسبة المسافات (المحدد ÷ المحيط المُدخل)' : 'نسبة المسافات (المحدد ÷ الممشى)';
     const ap = document.getElementById('sAreaPct');
     ap.textContent = !ar ? 'اضغط بطاقة «أنت قطعت»' : (ar.pct != null ? fmtPct(ar.pct) : ar.err);
     ap.classList.toggle('msg', !ar || ar.pct == null);
     const pr = photoDistRatio(), pe2 = document.getElementById('sPdPct');
     pe2.textContent = pr.text; pe2.classList.toggle('msg', !pr.ok);
-    const pe = document.getElementById('sPct');
-    pe.textContent = r.text;
-    pe.classList.toggle('msg', !r.ok);
   }
 
   function resizeImage(file, maxSize) {
@@ -2116,14 +2125,6 @@
       ctx.fillText('M', mx, my - 49);
     }
 
-    // خطوط مسافات الصور (أزرق) عندما لا توجد نتيجة مساحة
-    if (!ar && pdShown) {
-      const pd = photoDist();
-      if (pd.sel.length >= 2) {
-        drawPath(ctx, pd.sel.map(toPx), pd.close);
-        ctx.setLineDash([]); ctx.strokeStyle = '#1565c0'; ctx.lineWidth = 6; ctx.lineJoin = 'round'; ctx.stroke();
-      }
-    }
     // المساحة والنسبة: مسار المستخدم المغلق (أخضر) وشكل الصور المحددة (أزرق)
     if (ar) {
       const rp = ar.pts.map(toPx);
@@ -2232,7 +2233,7 @@
       const report = document.getElementById('report');
       const pages = [];
       const n = pickedCount();
-      const sp = specStats(), wk = walkedDist(), rt = ratio();
+      const sp = specStats(), wk = walkedDist(), rt = photoDistRatio();
 
       const row = p => {
         const d = p.pick ? fmtLen(pairDist(p)) : '—';
@@ -2245,7 +2246,7 @@
             ? `<div>طول المحيط المُدخل<b>${fmtLenC(enteredPerim())}</b>نصف القطر ${fmtRad(perimCalc(enteredPerim()).radius)} — المساحة التقديرية (دائرة): ${fmtM2(perimCalc(enteredPerim()).area)}</div>`
             : `<div>إجمالي المسافة الممشاة<b>${wk > 0 ? fmtLen(wk) : '—'}</b>${track.length} نقطة GPS — مستبعدة: ${rejected}${trackShape() ? ` — محيط المسار المغلق: ${fmtLen(trackShape().perim)} — المساحة المغلقة: ${fmtAreaFull(trackShape().area)}` : ''}</div>`}
           <div>${sp.label}<b>${sp.dist !== null ? fmtLen(sp.dist) : '—'}</b>${sp.dist !== null ? sumBreakdown() : 'لا توجد نقاط مختارة'}</div>
-          <div class="p">${perimMode ? 'نسبة المسافات (من المحيط المُدخل)' : 'نسبة المسافات (من الممشى)'}<b style="${rt.ok ? '' : 'font-size:11px;color:#a33'}">${rt.text}</b></div>
+          <div class="p">نسبة مسافات الصور من المسافة المقطوعة<b style="${rt.ok ? '' : 'font-size:11px;color:#a33'}">${rt.text}</b></div>
         </div>`;
 
       statusEl.textContent = 'جاري تحميل صورة الخريطة...';
@@ -2262,9 +2263,9 @@
           <div>مساحة الدائرة<b>${fmtM2(circleState.area)}</b>${fmtKm2(circleState.area)}</div>
         </div>` : ''}
         ${pdShown ? (() => { const r = photoDistRatio(); return `<div class="sumrow">
-          <div>أنت قطعت<b>${fmtLenC(r.route)}</b>${r.s ? r.s.label : ''}</div>
-          <div>مجموع مسافات الصور<b>${r.pd.sel.length >= 2 ? fmtLenC(r.pd.sum) : '—'}</b><span dir="ltr">${r.pd.sel.map(p => p.name).join(' → ')}${r.pd.close ? ' → ' + r.pd.sel[0].name : ''}</span>${r.pd.close ? ' (مع خط الإغلاق)' : ''}</div>
-          <div class="p">نسبة مسافات الصور من المسافة المقطوعة<b style="${r.ok ? '' : 'font-size:11px;color:#a33'}">${r.text}</b>مجموع مسافات الصور ÷ المسافة المقطوعة</div>
+          <div>المسافة المقطوعة فعليًا<b>${fmtNice(r.route)}</b>${tripProgress().ok ? 'من أصل ' + fmtNice(r.target) + ' — الإنجاز ' + tripProgress().text + ' — المتبقي ' + fmtNice(Math.max(0, tripProgress().left)) : 'لا توجد مسافة مستهدفة'}</div>
+          <div>مجموع عمود «المسافة بينهما»<b>${r.pc.n ? r.pc.sum.toFixed(1) + ' م' : '—'}</b>عدد الصور المحددة: ${r.pc.n ? photoCountAr(r.pc.n) : '—'}</div>
+          <div class="p">نسبة مسافات الصور من المسافة المقطوعة<b style="${r.ok ? '' : 'font-size:11px;color:#a33'}">${r.text}</b>مجموع العمود ÷ المسافة المقطوعة × 100</div>
         </div>`; })() : ''}
         ${ar ? `<div class="sumrow">
           <div>المسافة المقطوعة / المحيط بعد الإغلاق<b>${fmtLenC(ar.dist)}</b>المحيط بعد الإغلاق: ${fmtLenC(ar.routePerim)}</div>

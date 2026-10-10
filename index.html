@@ -1364,11 +1364,11 @@
   // مساحة نقاط الصور المحددة (بترتيب التحديد، مع إغلاق آخر صورة بأول صورة)
   function arImages() {
     const sel = selectedPhotos();
-    if (sel.length < 3) return { n: sel.length, area: null, perim: null };
+    if (sel.length < 3) return { n: sel.length, area: null, perim: null, names: sel.map(p => p.name) };
     const a = fsArea(sel);   // turf.polygon([[lng, lat], ...]) ثم turf.area
     let per = 0;
     for (let i = 0; i < sel.length; i++) per += distM(sel[i], sel[(i + 1) % sel.length]);
-    return { n: sel.length, area: a.area, perim: per, coords: sel.map(p => [p.lat, p.lng]) };
+    return { n: sel.length, area: a.area, by: a.by, perim: per, coords: sel.map(p => [p.lat, p.lng]), names: sel.map(p => p.name) };
   }
 
   function arCompute(s) {
@@ -1391,9 +1391,9 @@
     if (!ar) { arRefresh(fit); return; }
     const im = arImages();
     ar.img = im;
-    if (im.area === null) { ar.pct = null; ar.err = 'يلزم تحديد ثلاث صور على الأقل لحساب مساحة الصور.'; }
-    else if (!(ar.routeArea > 0)) { ar.pct = null; ar.err = 'المساحة الإجمالية للمسار تساوي صفرًا — لا يمكن حساب النسبة. تحرّك في مسار يحيط بمساحة ثم أعد المحاولة.'; }
-    else { ar.pct = im.area / ar.routeArea * 100; ar.err = null; }
+    if (im.area === null) { ar.pct = null; ar.err = `يلزم تحديد 3 صور على الأقل لحساب مساحة المضلع بين مواقع الصور (المحدد الآن: ${im.n}). حدّدها من مربع «مساحة» في الجدول.`; }
+    else if (!(Math.round(ar.routeArea) > 0)) { ar.pct = null; ar.err = 'المساحة الإجمالية للمسار تساوي صفرًا — لا يمكن حساب النسبة. تحرّك في مسار يحيط بمساحة ثم أعد المحاولة.'; }
+    else { ar.pct = Math.round(im.area) / Math.round(ar.routeArea) * 100; ar.err = null; }   // مساحة مضلع الصور ÷ مساحة مضلع مسار GPS × 100
     DB.save(ar, 'ar');
     arDraw(fit);
     arRender();
@@ -1424,7 +1424,7 @@
     const box = arEl('arResult');
     if (!ar && !pdShown) { box.classList.remove('show'); box.innerHTML = ''; return; }
     const r = photoDistRatio(), pc = r.pc, tp = tripProgress();
-    const rowsTxt = pc.rows.map(x => `${x.name} ${x.d.toFixed(1)}`).join(' + ');
+    const rowsTxt = pc.rows.map(x => `${x.name}↔${x.name}′ ${x.d.toFixed(1)}`).join(' + ');
     const im = ar && ar.img || {};
     box.innerHTML = `
       <h3><span>📐 نتائج الرحلة${r.s ? ' (' + r.s.label + ')' : ''}</span><button id="arHide">إخفاء</button></h3>
@@ -1436,7 +1436,7 @@
         <tr><td>نسبة إنجاز الرحلة</td><td>${tp.text}</td></tr>
         <tr><td>عدد الصور المحددة</td><td>${pc.n ? photoCountAr(pc.n) : '—'}</td></tr>
         <tr><td>مجموع عمود «المسافة بينهما»</td><td>${pc.n ? pc.sum.toFixed(1) + ' م' : '—'}</td></tr>
-        ${rowsTxt ? `<tr><td colspan="2" style="font-weight:normal;font-size:12px;color:#556"><span dir="ltr">${rowsTxt}</span> م</td></tr>` : ''}
+        ${rowsTxt ? `<tr><td colspan="2" style="font-weight:normal;font-size:12px;color:#556"><span dir="ltr">${rowsTxt}</span> م — هذا مجموع مسافات فقط، ولا يُستخدم لحساب أي مساحة.</td></tr>` : ''}
       </table>
       <div class="ar-big">
         <div class="dist" style="grid-column:1 / -1"><small>نسبة مسافات الصور من المسافة المقطوعة</small><b class="${r.ok ? '' : 'msg'}">${r.text}</b>
@@ -1448,12 +1448,14 @@
         <tr><td>المسافة عند الإغلاق</td><td>${fmtLenC(ar.dist)}</td></tr>
         <tr><td>محيط المسار بعد الإغلاق</td><td>${fmtLenC(ar.routePerim)}</td></tr>
         <tr><td>المساحة الإجمالية للمسار</td><td>${fmtAreaAR(ar.routeArea)}</td></tr>
-        <tr><td>عدد الصور المحددة</td><td>${im.n || 0}</td></tr>
+        <tr><td>عدد الصور المحددة للمضلع</td><td>${im.n || 0}</td></tr>
         <tr><td>محيط نقاط الصور</td><td>${im.perim != null ? fmtLenC(im.perim) : '—'}</td></tr>
-        <tr><td>إجمالي مساحة الصور المحددة</td><td>${im.area != null ? fmtAreaAR(im.area) : '—'}</td></tr>
+        <tr><td>مساحة المضلع بين مواقع الصور الأصلية</td><td>${im.area != null ? fmtAreaAR(im.area) : '—'}</td></tr>
+        ${im.area != null ? `<tr><td colspan="2" style="font-weight:normal;font-size:12px;color:#556;line-height:1.7">هذه المساحة محسوبة من إحداثيات الصور الأصلية المحددة: <span dir="ltr"><b>${im.names.join('→')}→${im.names[0]}</b></span>، وليست من عمود المسافة بينهما.</td></tr>` : ''}
       </table>
-      <div class="ar-big"><div class="area" style="grid-column:1 / -1"><small>نسبة مساحة الصور من المساحة الإجمالية</small><b class="${ar.pct == null ? 'msg' : ''}">${ar.pct != null ? fmtPct(ar.pct) : ar.err}</b></div></div>
-      <div class="ar-note">المساحة محسوبة من ${ar.pts.length} نقطة GPS بعد توصيل آخر نقطة بأول نقطة (${ar.by}). — ${ar.at}</div>`
+      <div class="ar-big"><div class="area" style="grid-column:1 / -1"><small>نسبة المساحات (مضلع الصور ÷ مضلع مسار GPS)</small><b class="${ar.pct == null ? 'msg' : ''}">${ar.pct != null ? fmtPct(ar.pct) : ar.err}</b>
+        ${ar.pct != null ? `<div style="font-size:12.5px;margin-top:2px">${Math.round(im.area).toLocaleString('en')} م² ÷ ${Math.round(ar.routeArea).toLocaleString('en')} م² × 100 = ${fmtPct(ar.pct)}</div>` : ''}</div></div>
+      <div class="ar-note">مساحة المسار محسوبة من ${ar.pts.length} نقطة GPS بعد توصيل آخر نقطة بأول نقطة وإغلاق المضلع. مساحة الصور محسوبة من مضلع مواقع الصور الأصلية المغلق. كلتاهما بـ ${ar.by} (turf.area على إحداثيات [خط الطول، خط العرض] مع إغلاق الحلقة). — ${ar.at}</div>`
       : `<div class="ar-note">نسبة المساحات تحتاج إغلاق المسار (توصيل موقعك بنقطة البداية).</div>
          <button id="arCloseBtn" style="width:100%;margin-top:6px;background:#2e7d32;color:#fff">🔒 إغلاق المسار وحساب نسبة المساحات</button>`}
       <div class="ar-note">نسبة مسافات الصور = مجموع عمود «المسافة بينهما» للصور التي حُددت لها إحداثية بديلة ÷ المسافة المقطوعة فعليًا × 100. لا تحتاج إغلاق المسار، ولا تستخدم الخطوط بين الصور.
@@ -2269,8 +2271,8 @@
         </div>`; })() : ''}
         ${ar ? `<div class="sumrow">
           <div>المسافة المقطوعة / المحيط بعد الإغلاق<b>${fmtLenC(ar.dist)}</b>المحيط بعد الإغلاق: ${fmtLenC(ar.routePerim)}</div>
-          <div>المساحة الإجمالية للمسار<b>${fmtAreaAR(ar.routeArea)}</b>مساحة الصور المحددة (${(ar.img && ar.img.n) || 0}): ${ar.img && ar.img.area != null ? fmtAreaAR(ar.img.area) : '—'} — محيطها: ${ar.img && ar.img.perim != null ? fmtLenC(ar.img.perim) : '—'}</div>
-          <div class="p">نسبة المساحات<b style="${ar.pct != null ? '' : 'font-size:11px;color:#a33'}">${ar.pct != null ? fmtPct(ar.pct) : ar.err}</b>مساحة الصور ÷ مساحة المسار</div>
+          <div>المساحة الإجمالية للمسار<b>${fmtAreaAR(ar.routeArea)}</b>مساحة المضلع بين مواقع الصور الأصلية${ar.img && ar.img.names && ar.img.area != null ? ' (' + ar.img.names.join('→') + '→' + ar.img.names[0] + ')' : ''}: ${ar.img && ar.img.area != null ? fmtAreaAR(ar.img.area) : '—'} — محيطها: ${ar.img && ar.img.perim != null ? fmtLenC(ar.img.perim) : '—'}</div>
+          <div class="p">نسبة المساحات<b style="${ar.pct != null ? '' : 'font-size:11px;color:#a33'}">${ar.pct != null ? fmtPct(ar.pct) : ar.err}</b>${ar.pct != null ? Math.round(ar.img.area).toLocaleString('en') + ' م² ÷ ' + Math.round(ar.routeArea).toLocaleString('en') + ' م² × 100' : 'مضلع الصور ÷ مضلع المسار'}</div>
         </div>` : ''}
         ${fs.pts.length ? `<div class="sumrow">
           <div>المحيط الميداني (${FS_STYLE[fs.type].label})<b>${fs.result ? fmtLenC(fs.result.perim) : fmtLenC(fs.dist)}</b>${fs.result ? 'المحيط الفعلي' : 'المسافة المقطوعة — الشكل لم يُغلق'}${fs.target ? ' — المستهدف: ' + fmtLenC(fs.target * 1000) : ''}</div>

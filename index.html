@@ -124,6 +124,10 @@
   .sv-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
   .sv-btns button { background: #e0f2f1; color: #004d40; padding: 10px 12px; font-size: 13.5px; }
   .sv-main button { flex: 1; background: #00695c; color: #fff; }
+  .sv-quick { display: grid; grid-template-columns: 1fr 1fr; }
+  .sv-quick button { padding: 12px 8px; font-size: 14px; }
+  #svTrackGo { background: #1565c0; color: #fff; }
+  #svTrackGo:disabled { opacity: .55; }
   .sv-main #svNewRound { background: #455a64; }
   .sv-ded { margin-top: 6px; }
   .sv-ded input { width: 100%; box-sizing: border-box; font-size: 15px; padding: 6px; border: 1px solid #b0bec5; border-radius: 6px; text-align: center; }
@@ -477,6 +481,13 @@
     <button id="svClose" class="cc-x" type="button" aria-label="إغلاق">✖</button>
   </div>
   <label class="sv-switch"><input type="checkbox" id="svOn"> تشغيل وضع مسح النظافة (كل صورة جديدة تُسجَّل كملاحظة نفايات)</label>
+  <div class="sv-btns sv-quick">
+    <button type="button" id="svTrackGo">▶ بدء تتبع الجولة</button>
+    <button type="button" id="svTrackStop">⏸ إيقاف مؤقت</button>
+    <button type="button" id="svLocate">📍 موقعي الآن</button>
+    <button type="button" id="svAttach">🖼️ إرفاق صور بإحداثياتها</button>
+  </div>
+  <div id="svTrackInfo" class="sv-note"></div>
   <div id="svApprovedTag" class="sv-approved" hidden>🔒 الجولة معتمدة — أي تعديل يتطلب كتابة السبب ويُسجَّل في سجل التعديلات</div>
 
   <details open class="sv-sec"><summary>1. بيانات الجولة</summary>
@@ -489,6 +500,7 @@
       <label>نهاية الجولة<span class="sv-row"><input id="svEnd" type="datetime-local"><button type="button" class="sv-now" data-for="svEnd">الآن</button></span></label>
       <label>نوع الجولة<select id="svKind"><option value="car">🚗 سيارة</option><option value="walk">🚶 مشي</option></select></label>
       <label>طول القطاع القياسي (م)<input id="svSegLen" type="number" inputmode="decimal" min="10" step="10" value="100"></label>
+      <label class="sv-wide">المسافة المفحوصة يدوياً (كم) — تُستخدم فقط عند عدم وجود تتبع GPS<input id="svManualKm" type="number" inputmode="decimal" min="0" step="0.1" placeholder="مثال: 5"></label>
     </div>
   </details>
 
@@ -1264,6 +1276,7 @@
     pdfBtn.disabled = points.length === 0 && !has;
     fsRenderResult();
     arUpdateCard();
+    if (typeof svTrackUI === 'function') svTrackUI();
   }
 
   function fsRenderResult() {
@@ -1358,20 +1371,22 @@
     fs.closeR = isFinite(r) && r > 0 ? r : 20;
   }
 
-  fsEl('fsStart').onclick = async () => {
+  fsEl('fsStart').onclick = () => fsBegin();
+  // بدء تسجيل مسار جديد (يستخدمه زر «بدء التتبع» وزر مسح النظافة)
+  async function fsBegin(opt = {}) {
     if (!navigator.geolocation) return fsToast('المتصفح لا يدعم تحديد الموقع.');
     fsReadSettings();
     if (fs.pts.length && !confirm('سيُمسح المسار الحالي ونتيجته، ويبدأ تسجيل مسار جديد من موقعك الآن.\nهل تريد المتابعة؟')) return;
     if (fsMe) { map.removeLayer(fsMe); fsMe = null; }
     if (fsAccCircle) { map.removeLayer(fsAccCircle); fsAccCircle = null; }
     fsEl('fsNear').classList.remove('show');
-    if (!fs.target && !confirm('لم تُدخل طول المحيط المستهدف.\nتريد البدء بدونه؟ (لن تظهر المسافة المتبقية ونسبة الإنجاز)')) return;
+    if (!fs.target && !opt.noTargetAsk && !confirm('لم تُدخل طول المحيط المستهدف.\nتريد البدء بدونه؟ (لن تظهر المسافة المتبقية ونسبة الإنجاز)')) return;
     Object.assign(fs, { pts: [], bad: [], dist: 0, rejected: 0, jumps: 0, alert90: false, leftStart: false, nearShown: false, result: null, state: 'tracking' });
     arClearRoute('field');   // مسار جديد = مضلع قديم يُحذف
     fsRedrawPath();
     await fsWatch(true);
     fsSave(); fsUpdateUI();
-  };
+  }
   fsEl('fsPause').onclick = () => { fs.state = 'paused'; fsWatch(false); fsSave(); fsUpdateUI(); };
   fsEl('fsResume').onclick = () => { fsReadSettings(); fs.state = 'tracking'; fsWatch(true); fsUpdateUI(); };
 
@@ -1834,7 +1849,7 @@
   const svEl = id => document.getElementById(id);
   const sv = {
     on: false, info: { district: '', contractor: '', contract: '', inspector: '', start: '', end: '', kind: 'car' },
-    segLen: 100, w: { 1: 1, 2: 2, 3: 3, 4: 5 }, t1: 2, t2: 5, deg: 0, cap: 10, margin: 20,
+    segLen: 100, manualKm: 0, w: { 1: 1, 2: 2, 3: 3, 4: 5 }, t1: 2, t2: 5, deg: 0, cap: 10, margin: 20,
     boundary: [], drawing: false, approved: false, approvedAt: '', log: [],
     ded: { clause: '', value: '', rows: [] }, rounds: []
   };
@@ -1886,16 +1901,26 @@
       if (i > 0) { const d = distM(pc[i - 1], p); pairs.push({ a: pc[i - 1], b: p, from: cum, to: cum + d, piece: k }); cum += d; }
       nodes.push({ p, cum, piece: k });
     }));
-    const dist = cum;
+    // بدون تتبع GPS: تُستخدم المسافة المفحوصة المُدخلة يدوياً (اختياري)
+    const manual = cum < 1 && num(sv.manualKm, 0) > 0;
+    const dist = manual ? num(sv.manualKm, 0) * 1000 : cum;
     // باقٍ أقل من متر واحد (فروق تقريب GPS) لا يُعتبر قطاعاً جديداً: 5000 م ÷ 100 م = 50 قطاعاً
     const nSeg = dist >= 1 ? Math.max(1, Math.ceil((dist - 1) / segL)) : 0;
     const segPts = new Array(nSeg).fill(0), segObs = Array.from({ length: nSeg }, () => []);
     // الملاحظات (بعد استبعاد المدمجة)
     const all = points.filter(p => p.obs);
     const counted = all.filter(p => !p.obs.merged);
+    const manualZones = [];
     const rows = counted.map(p => {
       const w = num(sv.w[p.obs.sev], 0);
       if (!svInside(p)) return { p, w, seg: null, why: 'خارج حدود الحي' };
+      if (manual) {
+        // بدون مسار: الملاحظات المتقاربة (ضمن نصف طول القطاع) تُعتبر في نفس القطاع
+        let z = manualZones.find(zz => distM(zz.c, p) <= segL / 2);
+        if (!z) { if (manualZones.length >= nSeg) return { p, w, seg: null, why: 'تجاوزت عدد القطاعات المُدخلة' }; z = { c: p, i: manualZones.length }; manualZones.push(z); }
+        segPts[z.i] += w; segObs[z.i].push(p.name);
+        return { p, w, seg: z.i, why: '' };
+      }
       // إسقاط الملاحظة على أقرب جزء من المسار لمعرفة موقعها الدقيق على طول المسار
       let bestCum = null, bd = Infinity;
       const k = Math.PI / 180, R0 = 6371008.8, c0 = Math.cos(p.lat * k);
@@ -1929,7 +1954,7 @@
     // تباعد الصور: ملاحظات تبعد أكثر من 3 كم عن بعضها
     let far = false;
     for (let i = 0; i < counted.length && !far; i++) for (let j = i + 1; j < counted.length; j++) if (distM(counted[i], counted[j]) > 3000) { far = true; break; }
-    return { s, L: segL, pieces, pairs, dist, nSeg, segs, degN, sumPts, cappedSum, prev, sevIdx, ded, rows, all, counted,
+    return { s, manual, L: segL, pieces, pairs, dist, nSeg, segs, degN, sumPts, cappedSum, prev, sevIdx, ded, rows, all, counted,
       merged: all.filter(p => p.obs.merged), outObs: rows.filter(r => r.seg === null), exits, far };
   }
   const svPct = v => v === null ? '—' : (Math.round(v * 100) / 100) + '%';
@@ -1948,7 +1973,7 @@
     svEl('svResult').innerHTML = `
       <h4>📊 نتيجة المسح الميداني${sv.info.district ? ' — ' + esc(sv.info.district) : ''}</h4>
       <table>
-        <tr><td>المسافة المفحوصة فعلًا داخل الحي</td><td><b>${fmtNice(r.dist)}</b>${r.exits ? ` (خروج من الحي ${r.exits} مرة — لم تُحسب مسافاته)` : ''}</td></tr>
+        <tr><td>المسافة المفحوصة فعلًا داخل الحي</td><td><b>${fmtNice(r.dist)}</b>${r.manual ? ' (مُدخلة يدوياً — بدون تتبع)' : ''}${r.exits ? ` (خروج من الحي ${r.exits} مرة — لم تُحسب مسافاته)` : ''}</td></tr>
         <tr><td>طول القطاع</td><td>${r.L} م</td></tr>
         <tr><td>إجمالي القطاعات المفحوصة</td><td><b>${r.nSeg}</b>${r.nSeg ? ` (${Math.round(r.dist)} م ÷ ${r.L} م، مقرّبة للأعلى)` : ''}</td></tr>
         <tr><td>عدد الملاحظات بعد حذف التكرار</td><td>${r.counted.length}${r.merged.length ? ` (+${r.merged.length} صور مدمجة كأدلة)` : ''}</td></tr>
@@ -1974,6 +1999,8 @@
            طريقة التحويل: نسبة انتشار التدني ${svPct(r.prev)} تقع في الشريحة ${ded && ded.row ? `${ded.row.from}% – ${ded.row.to}%` : '(لا توجد شريحة مطابقة)'}<br>
            قيمة الخصم المقترحة: <b>${ded ? ded.pct + '%' : '—'}</b>${ded && ded.amount !== null ? ` = ${ded.amount.toLocaleString('en', { maximumFractionDigits: 2 })} ريال` : ''}`}
       </div>
+      ${r.manual ? '<div class="sv-warn">📝 حساب بدون تتبع: القطاعات من المسافة المُدخلة يدوياً، والملاحظات المتقاربة (ضمن نصف طول القطاع) تُعدّ قطاعاً واحداً. التتبع بـ GPS أدق لأنه يثبت المسار المفحوص فعلاً.</div>' : ''}
+      ${!r.nSeg && r.counted.length ? '<div class="sv-warn">لحساب النسبة: ابدأ تتبع الجولة، أو أدخل «المسافة المفحوصة يدوياً» في بيانات الجولة.</div>' : ''}
       <div class="sv-warn">الاعتماد النهائي حسب صلاحية الجهة وشروط العقد. نسبة انتشار التدني ومؤشر الشدة نتيجتان مستقلتان، ولا تساوي أيٌّ منهما نسبة الخصم تلقائيًا.
         القطاعات تُحسب من المسافة المفحوصة، لا من عدد نقاط GPS ولا من مساحة المضلع بين الصور.</div>
       ${r.far ? '<div class="sv-warn">⚠️ توجد ملاحظات في مناطق متباعدة (أكثر من 3 كم). أنشئ جولة مستقلة لكل حي باستخدام «حفظ الجولة وبدء جولة جديدة».</div>' : ''}`;
@@ -2115,7 +2142,7 @@
     sv.info[k] = e.target.value; svSave(); svRender();
   }));
   document.querySelectorAll('.sv-now').forEach(b => b.onclick = () => { const i = svEl(b.dataset.for); i.value = nowLocal(); i.dispatchEvent(new Event('change')); });
-  const SV_NUMS = { svSegLen: 'segLen', svMargin: 'margin', svT1: 't1', svT2: 't2', svDeg: 'deg', svCap: 'cap' };
+  const SV_NUMS = { svSegLen: 'segLen', svManualKm: 'manualKm', svMargin: 'margin', svT1: 't1', svT2: 't2', svDeg: 'deg', svCap: 'cap' };
   Object.entries(SV_NUMS).forEach(([id, k]) => svEl(id).addEventListener('change', e => {
     const v = num(e.target.value, sv[k]);
     if (!svGuard(`تعديل إعداد الحساب (${k})`, sv[k], v)) { e.target.value = sv[k]; return; }
@@ -2149,7 +2176,7 @@
 
   function svFillForm() {
     Object.entries(SV_FIELDS).forEach(([id, k]) => svEl(id).value = sv.info[k] || (k === 'kind' ? 'car' : ''));
-    Object.entries(SV_NUMS).forEach(([id, k]) => svEl(id).value = sv[k]);
+    Object.entries(SV_NUMS).forEach(([id, k]) => svEl(id).value = k === 'manualKm' && !sv[k] ? '' : sv[k]);
     [1, 2, 3, 4].forEach(k => svEl('svW' + k).value = sv.w[k]);
     svEl('svClause').value = sv.ded.clause; svEl('svValue').value = sv.ded.value;
     svEl('svOn').checked = sv.on;
@@ -2191,6 +2218,43 @@
     svSave(); svFillForm(); svRender();
   };
 
+  // ---- أزرار سريعة: التتبع والموقع والصور من داخل مسح النظافة ----
+  let svLocMarker = null;
+  function svTrackUI() {
+    const tracking = fs.state === 'tracking', paused = fs.state === 'paused' && fs.pts.length;
+    svEl('svTrackGo').disabled = tracking;
+    svEl('svTrackGo').textContent = paused ? '⏯ متابعة تتبع الجولة' : '▶ بدء تتبع الجولة';
+    svEl('svTrackStop').disabled = !tracking;
+    svEl('svTrackInfo').textContent = tracking ? `🔵 جاري التتبع (${sv.info.kind === 'walk' ? 'مشي' : 'سيارة'}) — المسافة: ${fmtNice(fs.dist)} — دقة GPS: ${fs.lastAcc != null ? '±' + Math.round(fs.lastAcc) + ' م' : '…'}`
+      : paused ? `🟡 متوقف مؤقتاً — المسافة المسجلة: ${fmtNice(fs.dist)}` : 'اضغط «بدء تتبع الجولة» لتسجيل مسارك وتحديد موقعك على الخريطة.';
+  }
+  svEl('svTrackGo').onclick = async () => {
+    if (!sv.on) { sv.on = true; svEl('svOn').checked = true; if (!sv.info.start) { sv.info.start = nowLocal(); svEl('svStart').value = sv.info.start; } svSave(); }
+    // نوع الحركة من بيانات الجولة
+    if (fs.type !== sv.info.kind) { fs.type = sv.info.kind; setSetting('pm_fs_type', fs.type); fsRedrawPath(); }
+    if (fs.state === 'paused' && fs.pts.length) { fsEl('fsResume').click(); }
+    else await fsBegin({ noTargetAsk: true });
+    if (svLocMarker) { map.removeLayer(svLocMarker); svLocMarker = null; }
+    // تحديد الموقع فوراً قبل وصول أول نقطة مقبولة
+    getHere().then(c => { if (!fs.pts.length) map.setView([c.latitude, c.longitude], sv.info.kind === 'walk' ? 18 : 17); }).catch(() => {});
+    svEl('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    svTrackUI(); svRender();
+  };
+  svEl('svTrackStop').onclick = () => { fsEl('fsPause').click(); svTrackUI(); };
+  svEl('svLocate').onclick = async () => {
+    svEl('svTrackInfo').textContent = 'جاري تحديد موقعك...';
+    try {
+      const c = await getHere();
+      if (svLocMarker) map.removeLayer(svLocMarker);
+      svLocMarker = L.circleMarker([c.latitude, c.longitude], { radius: 9, color: '#fff', weight: 3, fillColor: '#1565c0', fillOpacity: 1 }).addTo(map)
+        .bindPopup(`📍 موقعك الآن<br><span dir="ltr">${c.latitude.toFixed(6)}, ${c.longitude.toFixed(6)}</span><br>الدقة ±${Math.round(c.accuracy)} م`).openPopup();
+      map.setView([c.latitude, c.longitude], 18);
+      svEl('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      svTrackUI();
+    } catch (e) { svEl('svTrackInfo').textContent = 'تعذّر تحديد الموقع — فعّل GPS واسمح للمتصفح بالوصول إلى الموقع.'; }
+  };
+  svEl('svAttach').onclick = () => document.getElementById('galleryInput').click();
+
   async function svRestore() {
     const d = await DB.load('survey', null);
     if (d && typeof d === 'object') {
@@ -2202,6 +2266,7 @@
       sv.log = Array.isArray(d.log) ? d.log : []; sv.rounds = Array.isArray(d.rounds) ? d.rounds : [];
     }
     svFillForm();
+    svTrackUI();
     if (sv.on || points.some(p => p.obs) || sv.boundary.length) svRender();
   }
 
@@ -2230,7 +2295,7 @@
     statusEl.textContent = 'جاري تحديد الموقع...';
     if (!navigator.geolocation) { statusEl.textContent = 'المتصفح لا يدعم تحديد الموقع.'; return; }
     navigator.geolocation.getCurrentPosition(
-      pos => addPoint(imgData, pos.coords),
+      pos => addPoint(imgData, pos.coords).then(() => flyToPhotos([points[points.length - 1]])),
       err => { statusEl.textContent = 'تعذّر تحديد الموقع: فعّل الموقع واسمح للمتصفح بالوصول. (' + err.message + ')'; },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
@@ -2371,10 +2436,22 @@
   }
 
   // صورة أو عدة صور من المعرض / تطبيق كاميرا
+  // الانتقال على الخريطة إلى مواقع الصور المضافة
+  function flyToPhotos(list) {
+    const ps = (list || []).filter(p => p && isFinite(p.lat) && isFinite(p.lng));
+    if (!ps.length) return;
+    if (ps.length === 1) map.setView([ps[0].lat, ps[0].lng], Math.max(map.getZoom(), 18));
+    else map.fitBounds(L.latLngBounds(ps.map(p => [p.lat, p.lng])).pad(0.25), { maxZoom: 18 });
+    const i = points.indexOf(ps[ps.length - 1]);
+    if (i >= 0 && photoMarkers[i]) setTimeout(() => photoMarkers[i].openPopup(), 350);
+    document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   async function fromFileInput(e) {
     const input = e.target, files = [...input.files];
     input.value = '';
     if (!files.length) return;
+    const firstNew = points.length;
     closeCamera();
     statusEl.textContent = files.length > 1 ? `جاري قراءة ${files.length} صور...` : 'جاري قراءة الصورة...';
 
@@ -2431,6 +2508,7 @@
     if (ocrDown) parts.push('تعذّر تشغيل قارئ النص — تأكد من الإنترنت');
     statusEl.textContent = (batch ? `تمت إضافة الصور: ` : 'تمت الإضافة: ') + parts.join(' — ') +
       (batch && autoPick.checked ? ' — حدّد الإحداثيات الثانية من الجدول.' : '');
+    flyToPhotos(points.slice(firstNew));   // الخريطة تنتقل إلى مواقع الصور المرفقة
   }
   cameraInput.onchange = fromFileInput;
   document.getElementById('galleryInput').onchange = fromFileInput;
@@ -3071,7 +3149,7 @@
             <tr><th>نوع الجولة</th><td>${I.kind === 'walk' ? 'مشي' : 'سيارة'}</td><th>طول القطاع</th><td>${r.L} م</td></tr>
           </table>
           <div class="sumrow" style="margin-top:10px">
-            <div>المسافة المفحوصة فعلًا<b>${fmtNice(r.dist)}</b>داخل حدود الحي${sv.boundary.length >= 3 ? ' (هامش ' + sv.margin + ' م)' : ' (بدون حدود مرسومة)'}</div>
+            <div>المسافة المفحوصة فعلًا<b>${fmtNice(r.dist)}</b>${r.manual ? 'مُدخلة يدوياً (بدون تتبع) — ' : ''}داخل حدود الحي${sv.boundary.length >= 3 ? ' (هامش ' + sv.margin + ' م)' : ' (بدون حدود مرسومة)'}</div>
             <div>إجمالي القطاعات<b>${r.nSeg}</b>المتدنية: ${r.degN} (نقاطها &gt; ${sv.deg})</div>
             <div>الملاحظات بعد حذف التكرار<b>${r.counted.length}</b>مجموع نقاط الشدة: ${r.sumPts}${r.merged.length ? ' — مدمجة: ' + r.merged.length : ''}</div>
           </div>

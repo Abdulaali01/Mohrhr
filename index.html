@@ -2371,6 +2371,9 @@
   function parseCoords(text) {
     const t = text
       .replace(/(\d)[Oo]|[Oo](\d)/g, (m, a, b) => (a || '') + '0' + (b || ''))
+      // حروف يخلطها قارئ النص مع الأرقام عندما تلتصق برقم: Z→2، S→5، l/I/|→1، B→8
+      .replace(/[Zz](?=[\d.])|(?<=\d)[Zz]/g, '2').replace(/S(?=[\d.])|(?<=\d)S/g, '5')
+      .replace(/[lI|](?=[\d.])|(?<=\d)[lI|]/g, '1').replace(/B(?=\d)|(?<=\d)B/g, '8')
       .replace(/(\d)\.\s+(\d)/g, '$1.$2')
       .replace(/(\d),(\d{4,})/g, '$1.$2');
     const ok = (a, b) => Math.abs(a) <= 90 && Math.abs(b) <= 180 && a !== 0 && b !== 0;
@@ -2391,6 +2394,34 @@
     }
     return null;
   }
+  // فحص منطقية الإحداثيات المقروءة من النص مقارنةً بمرجع قريب (صورة سابقة أو موقعك)،
+  // وإصلاح رقم ضائع أو مقروء خطأً في بداية خط العرض/الطول، مثل 1.27799294 ← 21.27799294
+  const OCR_MAX_KM = 50;
+  function ocrRepair(oc, ref) {
+    if (!oc || !ref) return { c: oc, fixed: false, sure: !ref };
+    if (distM(oc, ref) <= OCR_MAX_KM * 1000) return { c: oc, fixed: false, sure: true };
+    const variants = (txt, refVal) => {
+      const out = new Set([txt]);
+      const m = String(txt).match(/^(-?)(\d+)(\.\d+)$/);
+      if (m) {
+        const ip = m[2];
+        for (let k = 0; k <= ip.length; k++) for (const d of '0123456789') {
+          out.add(m[1] + ip.slice(0, k) + d + ip.slice(k) + m[3]);                         // رقم ضائع (1.27 ← 21.27، 4.38 ← 40.38)
+          if (k < ip.length) out.add(m[1] + ip.slice(0, k) + d + ip.slice(k + 1) + m[3]);  // رقم مقروء خطأ (31.27 ← 21.27)
+        }
+        if (ip.length > 1) for (let k = 0; k < ip.length; k++) out.add(m[1] + ip.slice(0, k) + ip.slice(k + 1) + m[3]);   // رقم زائد
+      }
+      return [...out].filter(v => isFinite(+v) && Math.abs(+v - refVal) < 0.6);
+    };
+    let best = null;
+    variants(oc.latText, ref.lat).forEach(la => variants(oc.lngText, ref.lng).forEach(lo => {
+      const c = { lat: +la, lng: +lo, latText: la, lngText: lo };
+      const d = distM(c, ref);
+      if (d <= 30000 && (!best || d < best.d)) best = { c, d };
+    }));
+    return best ? { c: best.c, fixed: true, sure: true, from: `${oc.latText}, ${oc.lngText}` } : { c: null, fixed: false, sure: false, from: `${oc.latText}, ${oc.lngText}` };
+  }
+
   function fileToImage(file) {
     return new Promise((res, rej) => {
       const url = URL.createObjectURL(file), im = new Image();
@@ -2472,6 +2503,7 @@
 
     const batch = items.length > 1;
     let fromText = 0, fromPhoto = 0, fromHere = 0, failed = 0, ocrDown = false;
+    const suspicious = [], fixedList = [];
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       const img = await resizeImage(it.f, 800);
@@ -2485,9 +2517,19 @@
       }
       // إذا كانت الصورة فيها موقع داخلي ويختلف كثيراً عن النص المقروء، فالقراءة غالباً خاطئة
       if (oc && hasGps(it) && distM(oc, it.ex) > 500) oc = null;
+      // فحص المنطقية: مقارنة بآخر صورة، أو بموقعك الحالي إن لم توجد صور
+      let ocFix = null;
+      if (oc && !hasGps(it)) {
+        let ref = points.length ? points[points.length - 1] : null;
+        if (!ref) { const h = await getHereOnce(); if (h) ref = { lat: h.latitude, lng: h.longitude }; }
+        const rp = ocrRepair(oc, ref);
+        if (rp.fixed) { ocFix = rp.from; oc = rp.c; }
+        else if (!rp.sure) { suspicious.push(rp.from); oc = null; }   // قراءة غير منطقية لا تُستخدم
+      }
 
       if (oc) {
-        await addPoint(img, { latitude: oc.lat, longitude: oc.lng, accuracy: null }, { time, src: 'ocr', noPick: batch, latText: oc.latText, lngText: oc.lngText });
+        await addPoint(img, { latitude: oc.lat, longitude: oc.lng, accuracy: null }, { time, src: ocFix ? 'ocrfix' : 'ocr', noPick: batch, latText: oc.latText, lngText: oc.lngText });
+        if (ocFix) { points[points.length - 1].ocrRaw = ocFix; fixedList.push(`${points[points.length - 1].name}: ${ocFix} ← ${ll(oc)}`); persist(); redraw(); }
         fromText++;
       } else if (hasGps(it)) {
         // 2) الموقع المحفوظ داخل الصورة
@@ -2506,6 +2548,8 @@
     if (fromHere) parts.push(`${fromHere} من موقعك الحالي (الصورة بلا موقع)`);
     if (failed) parts.push(`${failed} لم تُضف لتعذّر تحديد الموقع`);
     if (ocrDown) parts.push('تعذّر تشغيل قارئ النص — تأكد من الإنترنت');
+    if (fixedList.length) parts.push(`🔧 صُحّحت قراءة: ${fixedList.join(' ، ')}`);
+    if (suspicious.length) parts.push(`⚠️ تجاهلت قراءة غير منطقية (${suspicious.join(' ، ')}) — تبعد أكثر من ${OCR_MAX_KM} كم؛ صحّحها من «✏️ تعديل»`);
     statusEl.textContent = (batch ? `تمت إضافة الصور: ` : 'تمت الإضافة: ') + parts.join(' — ') +
       (batch && autoPick.checked ? ' — حدّد الإحداثيات الثانية من الجدول.' : '');
     flyToPhotos(points.slice(firstNew));   // الخريطة تنتقل إلى مواقع الصور المرفقة
@@ -2655,10 +2699,19 @@
     svQueuePhoto(points.length - 1);   // مسح النظافة: تسجيل نوع وشدة الملاحظة (عند تشغيل الوضع فقط)
     if (autoPick.checked && !opt.noPick) startPick(points.length - 1);
   }
-  const SRC_TAG = { ocr: '📝 من نص الصورة', exif: '📷 من الصورة', edit: '✏️ معدّلة يدوياً' };
-  const accText = p => p.acc != null ? p.acc : ({ ocr: 'نص الصورة', exif: 'من الصورة', edit: 'يدوي' }[p.src] || '—');
+  const SRC_TAG = { ocr: '📝 من نص الصورة', ocrfix: '📝 من نص الصورة (صُحّح رقم ضائع)', exif: '📷 من الصورة', edit: '✏️ معدّلة يدوياً' };
+  const accText = p => p.acc != null ? p.acc : ({ ocr: 'نص الصورة', ocrfix: 'نص الصورة (مصحّح)', exif: 'من الصورة', edit: 'يدوي' }[p.src] || '—');
 
   // تعديل إحداثيات الصورة يدوياً (لتصحيح أي قراءة خاطئة)
+  // صورة تبعد أكثر من 50 كم عن كل الصور الأخرى = غالباً خطأ في القراءة
+  function farFromOthers(i) {
+    if (points.length < 2) return false;
+    const p = points[i];
+    // مع صورتين فقط لا نعرف أيهما الخطأ، فنُنبّه على المقروءة من النص
+    if (points.length === 2 && !['ocr', 'ocrfix'].includes(p.src)) return false;
+    return points.every((q, j) => j === i || distM(p, q) > OCR_MAX_KM * 1000);
+  }
+
   async function editCoords(i) {
     const p = points[i];
     const before = ll(p);
@@ -2771,7 +2824,7 @@
       tr.innerHTML = `
         <td><b>${p.name}</b><br><label class="ar-chk" title="ضمن شكل مساحة الصور فقط (لا يؤثر على نسبة المسافات)"><input type="checkbox" class="ar-in" ${p.inArea !== false ? 'checked' : ''}> مساحة ${selRank.get(p) || ''}</label></td>
         <td><img src="${p.img}"></td>
-        <td><span class="ll">${ll(p)}</span>${SRC_TAG[p.src] ? `<br><small style="color:#2e7d32">${SRC_TAG[p.src]}</small>` : ''}<br><button class="mini btn-del edit-c" style="color:#1f4e79">✏️ تعديل</button></td>
+        <td><span class="ll">${ll(p)}</span>${farFromOthers(i) ? '<br><small style="color:#c62828;font-weight:bold">⚠️ بعيدة جداً عن باقي الصور — تحقّق من الإحداثية</small>' : ''}${SRC_TAG[p.src] ? `<br><small style="color:#2e7d32">${SRC_TAG[p.src]}</small>` : ''}<br><button class="mini btn-del edit-c" style="color:#1f4e79">✏️ تعديل</button></td>
         <td>${p.pick ? `<span class="ll pk">${ll(p.pick)}</span><br>` : ''}</td>
         <td>${d !== null ? `<span class="dist">${fmtLen(d)}</span>` : '—'}</td>
         <td><small>${p.time}</small></td>`;
